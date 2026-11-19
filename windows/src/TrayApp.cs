@@ -208,7 +208,7 @@ namespace ObitAutoAuth
         {
             Size target = SystemInformation.SmallIconSize;
             int size = Math.Max(16, Math.Min(48, Math.Max(target.Width, target.Height)));
-            int pad = Math.Max(1, size / 16);
+            float s = size / 16f;
 
             using (Bitmap bmp = new Bitmap(size, size))
             using (Graphics g = Graphics.FromImage(bmp))
@@ -217,11 +217,23 @@ namespace ObitAutoAuth
                 g.Clear(Color.Transparent);
                 using (SolidBrush outer = new SolidBrush(Color.FromArgb(40, 40, 40)))
                 {
-                    g.FillEllipse(outer, pad, pad, size - pad * 2, size - pad * 2);
+                    g.FillEllipse(outer, 0.8f * s, 0.8f * s, 14.4f * s, 14.4f * s);
                 }
                 using (SolidBrush inner = new SolidBrush(dotColor))
                 {
-                    g.FillEllipse(inner, pad * 2, pad * 2, size - pad * 4, size - pad * 4);
+                    g.FillEllipse(inner, 1.9f * s, 1.9f * s, 12.2f * s, 12.2f * s);
+                }
+                using (SolidBrush keyhole = new SolidBrush(Color.FromArgb(30, 30, 30)))
+                {
+                    g.FillEllipse(keyhole, 5.6f * s, 3.8f * s, 4.8f * s, 4.8f * s);
+                    PointF[] stem = new PointF[]
+                    {
+                        new PointF(6.6f * s, 7.5f * s),
+                        new PointF(9.4f * s, 7.5f * s),
+                        new PointF(10.2f * s, 12.4f * s),
+                        new PointF(5.8f * s, 12.4f * s),
+                    };
+                    g.FillPolygon(keyhole, stem);
                 }
                 IntPtr hIcon = bmp.GetHicon();
                 Icon nextIcon = Icon.FromHandle(hIcon);

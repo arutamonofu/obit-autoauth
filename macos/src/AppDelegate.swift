@@ -174,10 +174,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let size = NSSize(width: 16, height: 16)
         let img = NSImage(size: size, flipped: false) { _ in
             NSColor(calibratedWhite: 0.16, alpha: 1.0).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 1, y: 1, width: 14, height: 14)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 0.8, y: 0.8, width: 14.4, height: 14.4)).fill()
 
             color.setFill()
-            NSBezierPath(ovalIn: NSRect(x: 2, y: 2, width: 12, height: 12)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 1.9, y: 1.9, width: 12.2, height: 12.2)).fill()
+
+            NSColor(calibratedWhite: 0.12, alpha: 1.0).setFill()
+            NSBezierPath(ovalIn: NSRect(x: 5.6, y: 7.4, width: 4.8, height: 4.8)).fill()
+
+            let stem = NSBezierPath()
+            stem.move(to: NSPoint(x: 6.6, y: 8.5))
+            stem.line(to: NSPoint(x: 9.4, y: 8.5))
+            stem.line(to: NSPoint(x: 10.2, y: 3.6))
+            stem.line(to: NSPoint(x: 5.8, y: 3.6))
+            stem.close()
+            stem.fill()
             return true
         }
         img.isTemplate = false
