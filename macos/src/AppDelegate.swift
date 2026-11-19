@@ -174,19 +174,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let size = NSSize(width: 16, height: 16)
         let img = NSImage(size: size, flipped: false) { _ in
             NSColor(calibratedWhite: 0.16, alpha: 1.0).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 0.8, y: 0.8, width: 14.4, height: 14.4)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 0.5, y: 0.5, width: 15.0, height: 15.0)).fill()
 
             color.setFill()
-            NSBezierPath(ovalIn: NSRect(x: 1.9, y: 1.9, width: 12.2, height: 12.2)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 1.5, y: 1.5, width: 13.0, height: 13.0)).fill()
 
-            NSColor(calibratedWhite: 0.12, alpha: 1.0).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 5.6, y: 7.4, width: 4.8, height: 4.8)).fill()
+            NSColor(calibratedWhite: 0.09, alpha: 1.0).setFill()
+            NSBezierPath(ovalIn: NSRect(x: 5.1, y: 7.4, width: 5.8, height: 5.8)).fill()
 
             let stem = NSBezierPath()
-            stem.move(to: NSPoint(x: 6.6, y: 8.5))
-            stem.line(to: NSPoint(x: 9.4, y: 8.5))
-            stem.line(to: NSPoint(x: 10.2, y: 3.6))
-            stem.line(to: NSPoint(x: 5.8, y: 3.6))
+            stem.move(to: NSPoint(x: 7.0, y: 8.4))
+            stem.line(to: NSPoint(x: 9.0, y: 8.4))
+            stem.line(to: NSPoint(x: 10.0, y: 3.4))
+            stem.line(to: NSPoint(x: 6.0, y: 3.4))
             stem.close()
             stem.fill()
             return true

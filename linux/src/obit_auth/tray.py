@@ -68,10 +68,10 @@ def render_dot_svg(fill_hex: str) -> str:
     """Render a 16x16 SVG keyhole status icon matching the Windows tray indicator."""
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">\n'
-        '  <circle cx="8" cy="8" r="7.2" fill="#282828"/>\n'
-        f'  <circle cx="8" cy="8" r="6.1" fill="{fill_hex}"/>\n'
-        '  <circle cx="8" cy="6.2" r="2.4" fill="#1E1E1E"/>\n'
-        '  <path d="M6.6 7.5 L9.4 7.5 L10.2 12.4 L5.8 12.4 Z" fill="#1E1E1E"/>\n'
+        '  <circle cx="8" cy="8" r="7.5" fill="#282828"/>\n'
+        f'  <circle cx="8" cy="8" r="6.5" fill="{fill_hex}"/>\n'
+        '  <circle cx="8" cy="5.7" r="2.9" fill="#181818"/>\n'
+        '  <path d="M7 7.6 L9 7.6 L10 12.6 L6 12.6 Z" fill="#181818"/>\n'
         "</svg>\n"
     )
 

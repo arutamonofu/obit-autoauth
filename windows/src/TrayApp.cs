@@ -217,21 +217,21 @@ namespace ObitAutoAuth
                 g.Clear(Color.Transparent);
                 using (SolidBrush outer = new SolidBrush(Color.FromArgb(40, 40, 40)))
                 {
-                    g.FillEllipse(outer, 0.8f * s, 0.8f * s, 14.4f * s, 14.4f * s);
+                    g.FillEllipse(outer, 0.5f * s, 0.5f * s, 15.0f * s, 15.0f * s);
                 }
                 using (SolidBrush inner = new SolidBrush(dotColor))
                 {
-                    g.FillEllipse(inner, 1.9f * s, 1.9f * s, 12.2f * s, 12.2f * s);
+                    g.FillEllipse(inner, 1.5f * s, 1.5f * s, 13.0f * s, 13.0f * s);
                 }
-                using (SolidBrush keyhole = new SolidBrush(Color.FromArgb(30, 30, 30)))
+                using (SolidBrush keyhole = new SolidBrush(Color.FromArgb(24, 24, 24)))
                 {
-                    g.FillEllipse(keyhole, 5.6f * s, 3.8f * s, 4.8f * s, 4.8f * s);
+                    g.FillEllipse(keyhole, 5.1f * s, 2.8f * s, 5.8f * s, 5.8f * s);
                     PointF[] stem = new PointF[]
                     {
-                        new PointF(6.6f * s, 7.5f * s),
-                        new PointF(9.4f * s, 7.5f * s),
-                        new PointF(10.2f * s, 12.4f * s),
-                        new PointF(5.8f * s, 12.4f * s),
+                        new PointF(7.0f * s, 7.6f * s),
+                        new PointF(9.0f * s, 7.6f * s),
+                        new PointF(10.0f * s, 12.6f * s),
+                        new PointF(6.0f * s, 12.6f * s),
                     };
                     g.FillPolygon(keyhole, stem);
                 }
