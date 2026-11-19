@@ -128,12 +128,12 @@ final class MonitorEngine {
         case .checking:
             return UiPresentation(
                 iconColor: .gray,
-                statusText: "Проверка подключения...",
+                statusText: "Проверка входа...",
                 portalUrl: "",
                 showPortalAction: false
             )
         case .online:
-            let text = authCount <= 0 ? "Интернет работает" : "Интернет работает (входов: \(authCount))"
+            let text = authCount <= 0 ? "Авторизация активна" : "Авторизация активна (входов: \(authCount))"
             return UiPresentation(
                 iconColor: .green,
                 statusText: text,
@@ -150,7 +150,7 @@ final class MonitorEngine {
         case .vpnStalled:
             return UiPresentation(
                 iconColor: .orange,
-                statusText: "Wi-Fi работает, проверьте VPN",
+                statusText: "Вход есть, проверьте сеть или VPN",
                 portalUrl: "",
                 showPortalAction: false
             )
@@ -168,10 +168,17 @@ final class MonitorEngine {
                 portalUrl: portalUrl,
                 showPortalAction: !portalUrl.isEmpty
             )
-        case .offline, .error:
+        case .offline:
             return UiPresentation(
                 iconColor: .orange,
-                statusText: "Нет доступа в интернет",
+                statusText: "Нет связи с сетью",
+                portalUrl: "",
+                showPortalAction: false
+            )
+        case .error:
+            return UiPresentation(
+                iconColor: .orange,
+                statusText: "Ошибка авторизации",
                 portalUrl: "",
                 showPortalAction: false
             )
@@ -192,8 +199,8 @@ final class MonitorEngine {
             if manualTrigger {
                 emitNotify(
                     key: "online",
-                    title: "Подключение работает",
-                    text: "Интернет и VPN в порядке, вход не требуется.",
+                    title: "Авторизация активна",
+                    text: "Повторный вход не требуется.",
                     force: true
                 )
             }
@@ -226,11 +233,13 @@ final class MonitorEngine {
             let vpnOk = waitForDefaultRoute(maxMs: 4000)
             log.info(String(format: "Re-authorized via %@ in %.2fs (vpn_online=%@)", wifi.name, elapsed, vpnOk ? "true" : "false"))
             emitState(.online, portalUrl: "")
-            let suffix = vpnOk ? "VPN работает." : "Проверьте VPN: туннель пока не отвечает."
+            let text = vpnOk
+                ? String(format: "Повторный вход занял %.1f с.", elapsed)
+                : String(format: "Вход занял %.1f с, но сеть или VPN пока не отвечают.", elapsed)
             emitNotify(
                 key: "auth_ok",
-                title: "Wi-Fi ОБИТ подключён",
-                text: String(format: "Повторный вход выполнен за %.1f с. %@", elapsed, suffix),
+                title: "Вход в ОБИТ выполнен",
+                text: text,
                 force: manualTrigger
             )
 
@@ -241,8 +250,8 @@ final class MonitorEngine {
                 if manualTrigger {
                     emitNotify(
                         key: "online",
-                        title: "Подключение работает",
-                        text: "Интернет и VPN в порядке, вход не требуется.",
+                        title: "Авторизация активна",
+                        text: "Повторный вход не требуется.",
                         force: true
                     )
                 }
@@ -254,8 +263,8 @@ final class MonitorEngine {
             if manualTrigger || failStreak >= 2 {
                 emitNotify(
                     key: "vpn_stalled",
-                    title: "Wi-Fi работает, но VPN не отвечает",
-                    text: "Подключите или перезапустите VPN.",
+                    title: "Вход есть, но сеть не отвечает",
+                    text: "Авторизация активна. Проверьте сеть или перезапустите VPN.",
                     force: manualTrigger
                 )
             }
@@ -284,10 +293,13 @@ final class MonitorEngine {
             log.warn("Bypass check failed (\(res.outcome)): \(res.message)")
             emitState(res.outcome == .offline ? .offline : .error, portalUrl: "")
             if manualTrigger || failStreak >= 2 {
+                let isOffline = res.outcome == .offline
                 emitNotify(
-                    key: "err",
-                    title: "Нет доступа в интернет",
-                    text: "Проверьте подключение к Wi-Fi или роутеру.",
+                    key: isOffline ? "offline" : "err",
+                    title: isOffline ? "Нет связи с сетью" : "Ошибка авторизации",
+                    text: isOffline
+                        ? "Проверьте подключение к Wi-Fi или роутеру."
+                        : "Не удалось выполнить вход. Подробности в журнале работы.",
                     force: manualTrigger
                 )
             }

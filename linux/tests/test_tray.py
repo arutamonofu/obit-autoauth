@@ -102,15 +102,15 @@ class TrayHelpersTests(unittest.TestCase):
         self.assertEqual(format_tray_presentation(None, False), ("gray", "Автозащита остановлена", False))
         self.assertEqual(
             format_tray_presentation(DaemonState(status="checking"), True),
-            ("gray", "Проверка подключения...", False),
+            ("gray", "Проверка входа...", False),
         )
         self.assertEqual(
             format_tray_presentation(DaemonState(status="online", auth_count=0), True),
-            ("green", "Интернет работает", False),
+            ("green", "Авторизация активна", False),
         )
         self.assertEqual(
             format_tray_presentation(DaemonState(status="online", auth_count=2), True),
-            ("green", "Интернет работает (входов: 2)", False),
+            ("green", "Авторизация активна (входов: 2)", False),
         )
         self.assertEqual(
             format_tray_presentation(DaemonState(status="wifi_disconnected"), True),
@@ -118,7 +118,7 @@ class TrayHelpersTests(unittest.TestCase):
         )
         self.assertEqual(
             format_tray_presentation(DaemonState(status="vpn_stalled"), True),
-            ("orange", "Wi-Fi работает, проверьте VPN", False),
+            ("orange", "Вход есть, проверьте сеть или VPN", False),
         )
         self.assertEqual(
             format_tray_presentation(DaemonState(status="manual_required", portal_url="http://p"), True),
@@ -129,8 +129,12 @@ class TrayHelpersTests(unittest.TestCase):
             ("orange", "Нужен вход в эту сеть Wi-Fi", True),
         )
         self.assertEqual(
+            format_tray_presentation(DaemonState(status="offline"), True),
+            ("orange", "Нет связи с сетью", False),
+        )
+        self.assertEqual(
             format_tray_presentation(DaemonState(status="bypass_error"), True),
-            ("orange", "Нет доступа в интернет", False),
+            ("orange", "Ошибка авторизации", False),
         )
 
     def test_ensure_tray_icons_creates_four_svgs(self) -> None:

@@ -38,13 +38,14 @@ class CrossPlatformParityTests(unittest.TestCase):
         lin_tray = LIN_TRAY.read_text(encoding="utf-8")
 
         shared_statuses = [
-            "Проверка подключения...",
-            "Интернет работает",
+            "Проверка входа...",
+            "Авторизация активна",
             "Wi-Fi не подключён",
-            "Wi-Fi работает, проверьте VPN",
+            "Вход есть, проверьте сеть или VPN",
             "Нужен вход вручную (телефон/SMS)",
             "Нужен вход в эту сеть Wi-Fi",
-            "Нет доступа в интернет",
+            "Нет связи с сетью",
+            "Ошибка авторизации",
         ]
         for text in shared_statuses:
             self.assertLessEqual(len(text), 63, f"Status exceeds 63-char Windows NotifyIcon limit: {text}")
@@ -58,12 +59,13 @@ class CrossPlatformParityTests(unittest.TestCase):
         lin_all = LIN_DAEMON.read_text(encoding="utf-8") + "\n" + LIN_TRAY.read_text(encoding="utf-8")
 
         shared_titles = [
-            "Подключение работает",
-            "Wi-Fi ОБИТ подключён",
-            "Wi-Fi работает, но VPN не отвечает",
+            "Авторизация активна",
+            "Вход в ОБИТ выполнен",
+            "Вход есть, но сеть не отвечает",
             "Нужен вход вручную (телефон/SMS)",
             "Нужен вход в эту сеть Wi-Fi",
-            "Нет доступа в интернет",
+            "Нет связи с сетью",
+            "Ошибка авторизации",
             "Программа уже запущена.",
         ]
         for title in shared_titles:

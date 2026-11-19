@@ -40,12 +40,12 @@ def format_tray_presentation(state: DaemonState | None, daemon_alive: bool) -> t
 
     st = state.status
     if st in {"starting", "checking"}:
-        return ("gray", "Проверка подключения...", False)
+        return ("gray", "Проверка входа...", False)
     if st in {"online", "auth_success"}:
         label = (
-            "Интернет работает"
+            "Авторизация активна"
             if state.auth_count <= 0
-            else f"Интернет работает (входов: {state.auth_count})"
+            else f"Авторизация активна (входов: {state.auth_count})"
         )
         return ("green", label, False)
     if st == "wifi_disconnected":
@@ -54,12 +54,14 @@ def format_tray_presentation(state: DaemonState | None, daemon_alive: bool) -> t
         label = f"Другая сеть Wi-Fi ({state.ssid})" if state.ssid else "Другая сеть Wi-Fi"
         return ("gray", label, False)
     if st == "vpn_stalled":
-        return ("orange", "Wi-Fi работает, проверьте VPN", False)
+        return ("orange", "Вход есть, проверьте сеть или VPN", False)
     if st == "manual_required":
         return ("red", "Нужен вход вручную (телефон/SMS)", bool(state.portal_url))
     if st == "unknown_portal":
         return ("orange", "Нужен вход в эту сеть Wi-Fi", bool(state.portal_url))
-    return ("orange", "Нет доступа в интернет", False)
+    if st == "offline":
+        return ("orange", "Нет связи с сетью", False)
+    return ("orange", "Ошибка авторизации", False)
 
 
 def render_dot_svg(fill_hex: str) -> str:
@@ -183,7 +185,7 @@ class TrayApp:
 
         self.menu = self.Gtk.Menu()
 
-        self.status_item = self.Gtk.MenuItem(label="Проверка подключения...")
+        self.status_item = self.Gtk.MenuItem(label="Проверка входа...")
         self.status_item.set_sensitive(False)
         self.menu.append(self.status_item)
 
@@ -283,8 +285,8 @@ class TrayApp:
             )
 
     def _on_check_now(self, _item: object) -> None:
-        self.status_item.set_label("Проверка подключения...")
-        self.indicator.set_icon_full("obit-tray-gray", "Проверка подключения...")
+        self.status_item.set_label("Проверка входа...")
+        self.indicator.set_icon_full("obit-tray-gray", "Проверка входа...")
         state = read_state(self.state_path)
         if state is not None and state.status != "stopped" and is_pid_alive(state.pid):
             try:

@@ -127,7 +127,7 @@ class MonitorDaemon:
             self._last_message = ""
             self._last_status = "online"
             if manual_trigger:
-                notify("Подключение работает", "Интернет и VPN в порядке, вход не требуется.")
+                notify("Авторизация активна", "Повторный вход не требуется.")
             return "online"
 
         # 2. Slow path: verify Wi-Fi is actually connected before running sudo bypass
@@ -179,8 +179,12 @@ class MonitorDaemon:
             self._last_message = ""
             self._last_status = "auth_success"
             if manual_trigger or self.cfg.notify_on_success:
-                suffix = "VPN работает." if vpn_ok else "Проверьте VPN: туннель пока не отвечает."
-                notify("Wi-Fi ОБИТ подключён", f"Повторный вход выполнен за {elapsed:.1f} с. {suffix}")
+                body = (
+                    f"Повторный вход занял {elapsed:.1f} с."
+                    if vpn_ok
+                    else f"Вход занял {elapsed:.1f} с, но сеть или VPN пока не отвечают."
+                )
+                notify("Вход в ОБИТ выполнен", body)
             return "auth_success"
 
         if status == "already_online":
@@ -190,19 +194,23 @@ class MonitorDaemon:
                 self._last_message = ""
                 self._last_status = "online"
                 if manual_trigger:
-                    notify("Подключение работает", "Интернет и VPN в порядке, вход не требуется.")
+                    notify("Авторизация активна", "Повторный вход не требуется.")
                 return "online"
             LOG.warning("Wi-Fi '%s' is online via bypass, but default route (VPN) is stalled", ssid)
             self._last_portal_url = ""
             self._last_message = ""
             self._last_status = "vpn_stalled"
             if manual_trigger:
-                notify("Wi-Fi работает, но VPN не отвечает", "Подключите или перезапустите VPN.", urgency="critical")
+                notify(
+                    "Вход есть, но сеть не отвечает",
+                    "Авторизация активна. Проверьте сеть или перезапустите VPN.",
+                    urgency="critical",
+                )
             elif self._fail_streak >= 2 and self.cfg.notify_on_failure:
                 self._alert_once(
                     "vpn_stalled",
-                    "Wi-Fi работает, но VPN не отвечает",
-                    "Подключите или перезапустите VPN.",
+                    "Вход есть, но сеть не отвечает",
+                    "Авторизация активна. Проверьте сеть или перезапустите VPN.",
                 )
             return "vpn_stalled"
 
@@ -248,14 +256,16 @@ class MonitorDaemon:
         self._last_portal_url = portal_url
         self._last_message = message
         self._last_status = status
+        title = "Нет связи с сетью" if status == "offline" else "Ошибка авторизации"
+        body = (
+            "Проверьте подключение к Wi-Fi или роутеру."
+            if status == "offline"
+            else "Не удалось выполнить вход. Подробности в журнале работы."
+        )
         if manual_trigger:
-            notify("Нет доступа в интернет", "Проверьте подключение к Wi-Fi или роутеру.", urgency="critical")
+            notify(title, body, urgency="critical")
         elif self._fail_streak >= 2 and self.cfg.notify_on_failure:
-            self._alert_once(
-                f"err:{status}",
-                "Нет доступа в интернет",
-                "Проверьте подключение к Wi-Fi или роутеру.",
-            )
+            self._alert_once(f"err:{status}", title, body)
         return status
 
 

@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     )
 
     private var statusBarItem: NSStatusItem!
-    private let statusMenuItem = NSMenuItem(title: "Проверка подключения...", action: nil, keyEquivalent: "")
+    private let statusMenuItem = NSMenuItem(title: "Проверка входа...", action: nil, keyEquivalent: "")
     private let portalMenuItem = NSMenuItem(title: "Открыть страницу входа", action: #selector(onOpenPortalClick), keyEquivalent: "")
     private let checkNowMenuItem = NSMenuItem(title: "Проверить и войти сейчас", action: #selector(onCheckNowClick), keyEquivalent: "")
     private let autostartMenuItem = NSMenuItem(title: "Запускать автоматически", action: #selector(onToggleAutostart), keyEquivalent: "")

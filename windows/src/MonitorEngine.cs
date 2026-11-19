@@ -158,13 +158,13 @@ namespace ObitAutoAuth
             {
                 case AppStatus.Checking:
                     p.DotColor = Color.Gray;
-                    p.StatusText = "Проверка подключения...";
+                    p.StatusText = "Проверка входа...";
                     break;
                 case AppStatus.Online:
                     p.DotColor = Color.LimeGreen;
                     p.StatusText = authCount <= 0
-                        ? "Интернет работает"
-                        : string.Format("Интернет работает (входов: {0})", authCount);
+                        ? "Авторизация активна"
+                        : string.Format("Авторизация активна (входов: {0})", authCount);
                     break;
                 case AppStatus.WifiDisconnected:
                     p.DotColor = Color.Gray;
@@ -172,7 +172,7 @@ namespace ObitAutoAuth
                     break;
                 case AppStatus.VpnStalled:
                     p.DotColor = Color.Orange;
-                    p.StatusText = "Wi-Fi работает, проверьте VPN";
+                    p.StatusText = "Вход есть, проверьте сеть или VPN";
                     break;
                 case AppStatus.ManualRequired:
                     p.DotColor = Color.Crimson;
@@ -184,9 +184,13 @@ namespace ObitAutoAuth
                     p.StatusText = "Нужен вход в эту сеть Wi-Fi";
                     p.ShowPortalAction = !string.IsNullOrEmpty(p.PortalUrl);
                     break;
+                case AppStatus.Offline:
+                    p.DotColor = Color.Orange;
+                    p.StatusText = "Нет связи с сетью";
+                    break;
                 default:
                     p.DotColor = Color.Orange;
-                    p.StatusText = "Нет доступа в интернет";
+                    p.StatusText = "Ошибка авторизации";
                     break;
             }
             return p;
@@ -209,8 +213,8 @@ namespace ObitAutoAuth
                 EmitState(AppStatus.Online, string.Empty);
                 if (manualTrigger)
                 {
-                    EmitNotify("online", "Подключение работает",
-                        "Интернет и VPN в порядке, вход не требуется.",
+                    EmitNotify("online", "Авторизация активна",
+                        "Повторный вход не требуется.",
                         ToolTipIcon.Info, true);
                 }
                 return;
@@ -243,9 +247,11 @@ namespace ObitAutoAuth
                 _log.Info(string.Format("Re-authorized via {0} in {1:F2}s (vpn_online={2})",
                     wifi.Name, sw.Elapsed.TotalSeconds, vpnOk));
                 EmitState(AppStatus.Online, string.Empty);
-                string suffix = vpnOk ? "VPN работает." : "Проверьте VPN: туннель пока не отвечает.";
-                EmitNotify("auth_ok", "Wi-Fi ОБИТ подключён",
-                    string.Format("Повторный вход выполнен за {0:F1} с. {1}", sw.Elapsed.TotalSeconds, suffix),
+                string body = vpnOk
+                    ? string.Format("Повторный вход занял {0:F1} с.", sw.Elapsed.TotalSeconds)
+                    : string.Format("Вход занял {0:F1} с, но сеть или VPN пока не отвечают.", sw.Elapsed.TotalSeconds);
+                EmitNotify("auth_ok", "Вход в ОБИТ выполнен",
+                    body,
                     ToolTipIcon.Info, manualTrigger);
                 return;
             }
@@ -258,8 +264,8 @@ namespace ObitAutoAuth
                     EmitState(AppStatus.Online, string.Empty);
                     if (manualTrigger)
                     {
-                        EmitNotify("online", "Подключение работает",
-                            "Интернет и VPN в порядке, вход не требуется.",
+                        EmitNotify("online", "Авторизация активна",
+                            "Повторный вход не требуется.",
                             ToolTipIcon.Info, true);
                     }
                     return;
@@ -269,8 +275,8 @@ namespace ObitAutoAuth
                 EmitState(AppStatus.VpnStalled, string.Empty);
                 if (manualTrigger || _failStreak >= 2)
                 {
-                    EmitNotify("vpn_stalled", "Wi-Fi работает, но VPN не отвечает",
-                        "Подключите или перезапустите VPN.",
+                    EmitNotify("vpn_stalled", "Вход есть, но сеть не отвечает",
+                        "Авторизация активна. Проверьте сеть или перезапустите VPN.",
                         ToolTipIcon.Warning, manualTrigger);
                 }
                 return;
@@ -300,8 +306,13 @@ namespace ObitAutoAuth
             EmitState(res.Outcome == PortalOutcome.Offline ? AppStatus.Offline : AppStatus.Error, string.Empty);
             if (manualTrigger || _failStreak >= 2)
             {
-                EmitNotify("err", "Нет доступа в интернет",
-                    "Проверьте подключение к Wi-Fi или роутеру.",
+                bool isOffline = res.Outcome == PortalOutcome.Offline;
+                EmitNotify(
+                    isOffline ? "offline" : "err",
+                    isOffline ? "Нет связи с сетью" : "Ошибка авторизации",
+                    isOffline
+                        ? "Проверьте подключение к Wi-Fi или роутеру."
+                        : "Не удалось выполнить вход. Подробности в журнале работы.",
                     ToolTipIcon.Error, manualTrigger);
             }
         }

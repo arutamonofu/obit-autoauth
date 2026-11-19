@@ -73,7 +73,7 @@ namespace ObitAutoAuth
 
             _engine = new MonitorEngine(_log, ApplyPresentation, HandleNotification);
 
-            _statusItem = new ToolStripMenuItem("Проверка подключения...");
+            _statusItem = new ToolStripMenuItem("Проверка входа...");
             _statusItem.Enabled = false;
 
             _portalItem = new ToolStripMenuItem("Открыть страницу входа", null, OnOpenPortalClick);
