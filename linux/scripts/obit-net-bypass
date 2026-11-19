@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Root helper that routes traffic for the dedicated '_obitauth' user
+# directly out of the active Wi-Fi interface (bypassing any VPN).
+
+OBIT_USER="${OBIT_AUTH_USER:-_obitauth}"
+ROUTE_TABLE="${OBIT_ROUTE_TABLE:-1337}"
+RULE_PRIORITY="${OBIT_RULE_PRIORITY:-10}"
+PYTHONPATH_DIR="${OBIT_PYTHONPATH:-/usr/local/lib/obit-auto-auth}"
+
+MODE="authorize"
+PROBE_URL="http://connectivitycheck.gstatic.com/generate_204"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --probe)     MODE="probe"; shift ;;
+        --authorize) MODE="authorize"; shift ;;
+        --cleanup)   MODE="cleanup"; shift ;;
+        --probe-url) PROBE_URL="${2:-$PROBE_URL}"; shift 2 ;;
+        *) echo "Unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
+
+cleanup_rules() {
+    local uid
+    if id -u "$OBIT_USER" >/dev/null 2>&1; then
+        uid="$(id -u "$OBIT_USER")"
+        while ip rule show | grep -q "uidrange ${uid}-${uid}.*lookup ${ROUTE_TABLE}"; do
+            ip rule del priority "$RULE_PRIORITY" uidrange "${uid}-${uid}" lookup "$ROUTE_TABLE" 2>/dev/null || break
+        done
+    fi
+    ip route flush table "$ROUTE_TABLE" 2>/dev/null || true
+}
+
+if [[ "$MODE" == "cleanup" ]]; then
+    cleanup_rules
+    exit 0
+fi
+
+if ! id -u "$OBIT_USER" >/dev/null 2>&1; then
+    echo "{\"status\":\"bypass_error\",\"portal_url\":\"\",\"message\":\"User $OBIT_USER missing (run install.sh)\"}"
+    exit 1
+fi
+OBIT_UID="$(id -u "$OBIT_USER")"
+
+WIFI_IFACE="$(nmcli -t -f DEVICE,TYPE,STATE dev | awk -F: '$2=="wifi" && $3=="connected" {print $1; exit}')"
+if [[ -z "$WIFI_IFACE" ]]; then
+    echo '{"status":"offline","portal_url":"","message":"No active Wi-Fi interface"}'
+    exit 1
+fi
+
+mapfile -t NM_INFO < <(nmcli -g IP4.GATEWAY,IP4.DNS dev show "$WIFI_IFACE")
+WIFI_GW="${NM_INFO[0]:-}"
+WIFI_DNS="${NM_INFO[1]:-}"
+WIFI_DNS="${WIFI_DNS// | /,}"
+
+if [[ -z "$WIFI_GW" ]]; then
+    WIFI_GW="$(ip -4 route show dev "$WIFI_IFACE" default | awk '{print $3; exit}')"
+fi
+if [[ -z "$WIFI_GW" ]]; then
+    echo "{\"status\":\"offline\",\"portal_url\":\"\",\"message\":\"No IPv4 gateway for $WIFI_IFACE\"}"
+    exit 1
+fi
+
+WIFI_SUBNET="$(ip -4 route show dev "$WIFI_IFACE" scope link | awk '{print $1; exit}')"
+
+if ! ip rule show | grep -q "uidrange ${OBIT_UID}-${OBIT_UID}.*lookup ${ROUTE_TABLE}"; then
+    ip rule add priority "$RULE_PRIORITY" uidrange "${OBIT_UID}-${OBIT_UID}" lookup "$ROUTE_TABLE"
+fi
+
+ip route flush table "$ROUTE_TABLE" 2>/dev/null || true
+if [[ -n "$WIFI_SUBNET" ]]; then
+    ip route replace "$WIFI_SUBNET" dev "$WIFI_IFACE" scope link table "$ROUTE_TABLE"
+fi
+ip route replace default via "$WIFI_GW" dev "$WIFI_IFACE" table "$ROUTE_TABLE"
+
+CLIENT_ARGS=("--probe-url" "$PROBE_URL")
+[[ "$MODE" == "probe" ]] && CLIENT_ARGS+=("--probe-only")
+
+exec runuser -u "$OBIT_USER" -- \
+    env PYTHONPATH="$PYTHONPATH_DIR" OBIT_WIFI_DNS="${WIFI_DNS:-$WIFI_GW}" \
+    python3 -m obit_auth.portal_client "${CLIENT_ARGS[@]}"

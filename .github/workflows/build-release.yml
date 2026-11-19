@@ -1,0 +1,125 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-linux:
+    name: Tests & Linux Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unit & parity tests
+        run: make test
+
+      - name: Check shell scripts syntax
+        run: |
+          bash -n linux/install.sh linux/uninstall.sh linux/build.sh \
+            linux/scripts/obit-auth linux/scripts/obit-net-bypass \
+            macos/build.sh macos/Install.command macos/Uninstall.command
+
+      - name: Build Linux package
+        run: make build-linux
+
+      - name: Upload Linux package
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBIT-AutoAuth-Linux
+          path: dist/OBIT-AutoAuth-Linux.tar.gz
+
+  build-windows:
+    name: Build Windows Package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile ObitAutoAuth.exe and package ZIP
+        shell: pwsh
+        run: |
+          $csc = Join-Path $env:WINDIR "Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          if (-not (Test-Path $csc)) {
+              $csc = Join-Path $env:WINDIR "Microsoft.NET\Framework\v4.0.30319\csc.exe"
+          }
+          if (-not (Test-Path $csc)) {
+              Write-Error "csc.exe not found"
+              exit 1
+          }
+
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $stage = Join-Path $env:RUNNER_TEMP "win-pkg"
+          if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          & $csc /nologo /target:winexe /optimize+ /utf8output /codepage:65001 `
+              /out:"$stage\ObitAutoAuth.exe" `
+              /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll `
+              windows\src\*.cs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          foreach ($f in @("Install.bat", "Uninstall.bat", "README.txt")) {
+              $text = [System.IO.File]::ReadAllText((Join-Path "windows" $f), [System.Text.Encoding]::UTF8)
+              $crlf = $text.Replace("`r`n", "`n").Replace("`n", "`r`n")
+              [System.IO.File]::WriteAllText((Join-Path $stage $f), $crlf, (New-Object System.Text.UTF8Encoding($false)))
+          }
+
+          Compress-Archive -Path "$stage\*" -DestinationPath "dist\OBIT-AutoAuth-Windows.zip" -Force
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBIT-AutoAuth-Windows
+          path: dist/OBIT-AutoAuth-Windows.zip
+
+  build-macos:
+    name: Build macOS Package
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build universal .app and package ZIP
+        run: |
+          chmod +x macos/build.sh macos/Install.command macos/Uninstall.command
+          make build-macos
+          lipo -info "dist/OBIT Auto-Auth.app/Contents/MacOS/ObitAutoAuth"
+          codesign --verify --deep --strict "dist/OBIT Auto-Auth.app"
+
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBIT-AutoAuth-macOS
+          path: dist/OBIT-AutoAuth-macOS.zip
+
+  release:
+    name: Publish GitHub Release
+    needs: [test-and-linux, build-windows, build-macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built packages
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: release-assets/*

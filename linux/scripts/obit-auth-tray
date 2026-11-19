@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PYTHONPATH="/usr/local/lib/obit-auto-auth"
+exec /usr/bin/python3 -m obit_auth.tray "$@"

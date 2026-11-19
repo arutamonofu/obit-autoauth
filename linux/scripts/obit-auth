@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PYTHONPATH="/usr/local/lib/obit-auto-auth"
+CMD="${1:-status}"
+
+case "$CMD" in
+    status)
+        SVC_STATE="$(systemctl --user is-active obit-auto-auth.service 2>/dev/null || true)"
+        echo "Daemon service   : ${SVC_STATE:-inactive}"
+        python3 -m obit_auth.daemon --status
+        ;;
+    now|auth)
+        python3 -m obit_auth.daemon --force-bypass
+        ;;
+    logs|log)
+        journalctl --user -u obit-auto-auth.service -n 50 -f
+        ;;
+    restart)
+        systemctl --user restart obit-auto-auth.service
+        systemctl --user status obit-auto-auth.service --no-pager
+        ;;
+    tray)
+        if [[ "${2:-}" == "--fg" ]]; then
+            exec python3 -m obit_auth.tray
+        fi
+        nohup python3 -m obit_auth.tray >/dev/null 2>&1 &
+        ;;
+    *)
+        echo "Использование: obit-auth {status|now|logs|restart|tray}"
+        exit 1
+        ;;
+esac

@@ -1,0 +1,26 @@
+# Конфигурация OBIT Wi-Fi Auto-Auth (~/.config/obit-auto-auth/config.toml)
+
+# Интервал быстрой проверки (в секундах). В обычном состоянии делает лёгкий
+# IPv4 HTTP-запрос внутри процесса (0 подпроцессов, 0 вызовов sudo).
+check_interval_sec = 15
+
+# Пауза анти-спама уведомлений (в секундах; минимум 300 с между повторами)
+retry_cooldown_sec = 30
+
+# Ограничить автоавторизацию конкретным SSID (пусто = любая Wi-Fi сеть ОБИТ)
+# Пример: ssid_filter = "NW_CAMPUS_by_OBIT"
+ssid_filter = ""
+
+# URL для проверки связности и перехвата captive-порталом (HTTP)
+probe_url = "http://connectivitycheck.gstatic.com/generate_204"
+
+# Использовать root-helper для обхода любого VPN на уровне маршрутизации Linux
+use_sudo_bypass = true
+bypass_helper = "/usr/local/libexec/obit-net-bypass"
+
+# Время ожидания восстановления VPN после успешной авторизации (в секундах)
+vpn_wait_sec = 4.0
+
+# Уведомления рабочего стола (notify-send)
+notify_on_success = true
+notify_on_failure = true

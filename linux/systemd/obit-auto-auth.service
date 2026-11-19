@@ -1,0 +1,14 @@
+[Unit]
+Description=OBIT Wi-Fi Captive Portal Auto-Authorization Daemon
+After=network-online.target graphical-session.target
+
+[Service]
+Type=simple
+Environment=PYTHONPATH=/usr/local/lib/obit-auto-auth
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -m obit_auth.daemon
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
