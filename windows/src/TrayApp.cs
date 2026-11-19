@@ -114,7 +114,7 @@ namespace ObitAutoAuth
             ApplyPresentation(MonitorEngine.FormatPresentation(AppStatus.Checking, 0, string.Empty));
 
             _timer = new System.Windows.Forms.Timer();
-            _timer.Interval = 15000;
+            _timer.Interval = 5000;
             _timer.Tick += OnTimerTick;
             _timer.Start();
 

@@ -120,6 +120,23 @@ class MonitorDaemon:
         self._last_alert_key = ""
 
     def step(self, force_bypass: bool = False, manual_trigger: bool = False) -> str:
+        ssid: str | None = None
+        if self.cfg.ssid_filter:
+            ssid = active_wifi_connection()
+            if ssid is not None:
+                if ssid != self._last_ssid:
+                    self._last_alert_key = ""
+                    self._fail_streak = 0
+                    self._last_ssid = ssid
+                if ssid != self.cfg.ssid_filter:
+                    self._fail_streak = 0
+                    self._last_portal_url = ""
+                    self._last_message = ""
+                    self._last_status = "ssid_filtered"
+                    if manual_trigger:
+                        notify("Другая сеть Wi-Fi", f"Сеть «{ssid}» пропущена фильтром в настройках.")
+                    return "ssid_filtered"
+
         # 1. Fast path: pure-Python IPv4 HTTP probe via current default route (0 subprocesses)
         if not force_bypass and check_default_route_online(url=self.cfg.probe_url, timeout=2.5):
             self._reset_health()
@@ -131,7 +148,8 @@ class MonitorDaemon:
             return "online"
 
         # 2. Slow path: verify Wi-Fi is actually connected before running sudo bypass
-        ssid = active_wifi_connection()
+        if not self.cfg.ssid_filter:
+            ssid = active_wifi_connection()
         if ssid is None:
             self._last_ssid = None
             self._fail_streak = 0
@@ -146,14 +164,6 @@ class MonitorDaemon:
             self._last_alert_key = ""
             self._fail_streak = 0
             self._last_ssid = ssid
-
-        if self.cfg.ssid_filter and ssid and ssid != self.cfg.ssid_filter:
-            self._last_portal_url = ""
-            self._last_message = ""
-            self._last_status = "ssid_filtered"
-            if manual_trigger:
-                notify("Другая сеть Wi-Fi", f"Сеть «{ssid}» пропущена фильтром в настройках.")
-            return "ssid_filtered"
 
         self._fail_streak += 1
         t0 = time.monotonic()

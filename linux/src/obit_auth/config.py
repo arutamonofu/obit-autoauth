@@ -15,7 +15,7 @@ DEFAULT_BYPASS_HELPER = "/usr/local/libexec/obit-net-bypass"
 
 @dataclass
 class DaemonConfig:
-    check_interval_sec: int = 15
+    check_interval_sec: int = 5
     retry_cooldown_sec: int = 30
     ssid_filter: str = ""
     probe_url: str = DEFAULT_PROBE_URL
@@ -37,7 +37,7 @@ class DaemonConfig:
             vpn_wait = data["vpn"].get("reconnect_wait_sec", 4.0)
 
         return cls(
-            check_interval_sec=int(data.get("check_interval_sec", 15)),
+            check_interval_sec=int(data.get("check_interval_sec", 5)),
             retry_cooldown_sec=int(data.get("retry_cooldown_sec", 30)),
             ssid_filter=str(data.get("ssid_filter", "")),
             probe_url=str(data.get("probe_url", DEFAULT_PROBE_URL)),

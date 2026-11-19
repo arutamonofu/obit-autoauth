@@ -82,8 +82,9 @@ class TestMonitorDaemon(unittest.TestCase):
         m_notify.assert_called_once()  # anti-spam cooldown
 
     @mock.patch("obit_auth.daemon.notify")
+    @mock.patch("obit_auth.daemon.active_wifi_connection", return_value="NW_CAMPUS_by_OBIT")
     @mock.patch("obit_auth.daemon.check_default_route_online", return_value=True)
-    def test_manual_trigger_notifies_even_when_online(self, _m_fast, m_notify) -> None:
+    def test_manual_trigger_notifies_even_when_online(self, _m_fast, _m_wifi, m_notify) -> None:
         daemon = MonitorDaemon(self.cfg)
         self.assertEqual(daemon.step(manual_trigger=True), "online")
         m_notify.assert_called_once()
@@ -106,6 +107,17 @@ class TestMonitorDaemon(unittest.TestCase):
     def test_ssid_filter_skips_other_networks(self, _m_fast, _m_wifi, m_portal) -> None:
         daemon = MonitorDaemon(self.cfg)
         self.assertEqual(daemon.step(), "ssid_filtered")
+        m_portal.assert_not_called()
+
+    @mock.patch("obit_auth.daemon.run_portal_check")
+    @mock.patch("obit_auth.daemon.active_wifi_connection", return_value="HOME_WIFI")
+    @mock.patch("obit_auth.daemon.check_default_route_online", return_value=True)
+    def test_ssid_filter_skips_other_networks_even_when_online(self, m_fast, _m_wifi, m_portal) -> None:
+        daemon = MonitorDaemon(self.cfg)
+        self.assertEqual(daemon.step(), "ssid_filtered")
+        self.assertEqual(daemon.snapshot().status, "ssid_filtered")
+        self.assertEqual(daemon.snapshot().ssid, "HOME_WIFI")
+        m_fast.assert_not_called()
         m_portal.assert_not_called()
 
 
