@@ -19,8 +19,35 @@ namespace ObitAutoAuth
         public IPAddress GatewayIp;
         public List<IPAddress> DnsServers;
 
+        internal static bool IsUsableUnicastIpv4(IPAddress ip)
+        {
+            if (ip == null || ip.AddressFamily != AddressFamily.InterNetwork) return false;
+            if (ip.Equals(IPAddress.Any) || ip.Equals(IPAddress.Broadcast) || IPAddress.IsLoopback(ip)) return false;
+            byte[] b = ip.GetAddressBytes();
+            if (b[0] == 169 && b[1] == 254) return false;
+            return true;
+        }
+
+        internal static bool IsUsableDnsIpv4(IPAddress ip)
+        {
+            if (!IsUsableUnicastIpv4(ip)) return false;
+            byte[] b = ip.GetAddressBytes();
+            if (b[0] == 198 && (b[1] == 18 || b[1] == 19)) return false;
+            return true;
+        }
+
+        internal static void AddUniqueIp(List<IPAddress> list, IPAddress ip)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i].Equals(ip)) return;
+            }
+            list.Add(ip);
+        }
+
         public static WifiAdapterInfo DetectActive()
         {
+            WifiAdapterInfo fallback = null;
             NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
             for (int i = 0; i < interfaces.Length; i++)
             {
@@ -28,15 +55,20 @@ namespace ObitAutoAuth
                 if (ni.OperationalStatus != OperationalStatus.Up) continue;
                 if (ni.NetworkInterfaceType != NetworkInterfaceType.Wireless80211) continue;
 
-                IPInterfaceProperties props = ni.GetIPProperties();
+                IPInterfaceProperties props = null;
                 IPv4InterfaceProperties ipv4Props = null;
-                try { ipv4Props = props.GetIPv4Properties(); } catch { continue; }
-                if (ipv4Props == null) continue;
+                try
+                {
+                    props = ni.GetIPProperties();
+                    ipv4Props = props.GetIPv4Properties();
+                }
+                catch { continue; }
+                if (props == null || ipv4Props == null) continue;
 
                 IPAddress localIp = null;
                 foreach (UnicastIPAddressInformation uni in props.UnicastAddresses)
                 {
-                    if (uni.Address.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(uni.Address))
+                    if (IsUsableUnicastIpv4(uni.Address))
                     {
                         localIp = uni.Address;
                         break;
@@ -47,7 +79,7 @@ namespace ObitAutoAuth
                 IPAddress gwIp = null;
                 foreach (GatewayIPAddressInformation gw in props.GatewayAddresses)
                 {
-                    if (gw.Address.AddressFamily == AddressFamily.InterNetwork && !gw.Address.Equals(IPAddress.Any))
+                    if (IsUsableUnicastIpv4(gw.Address))
                     {
                         gwIp = gw.Address;
                         break;
@@ -58,15 +90,13 @@ namespace ObitAutoAuth
                 List<IPAddress> dnsList = new List<IPAddress>();
                 foreach (IPAddress dns in props.DnsAddresses)
                 {
-                    if (dns.AddressFamily == AddressFamily.InterNetwork)
+                    if (IsUsableDnsIpv4(dns))
                     {
-                        dnsList.Add(dns);
+                        AddUniqueIp(dnsList, dns);
                     }
                 }
-                if (dnsList.Count == 0)
-                {
-                    dnsList.Add(gwIp);
-                }
+                bool hasConfiguredDns = dnsList.Count > 0;
+                AddUniqueIp(dnsList, gwIp);
 
                 WifiAdapterInfo info = new WifiAdapterInfo();
                 info.Name = ni.Name;
@@ -74,9 +104,11 @@ namespace ObitAutoAuth
                 info.LocalIp = localIp;
                 info.GatewayIp = gwIp;
                 info.DnsServers = dnsList;
-                return info;
+
+                if (hasConfiguredDns) return info;
+                if (fallback == null) fallback = info;
             }
-            return null;
+            return fallback;
         }
     }
 
@@ -118,6 +150,31 @@ namespace ObitAutoAuth
             sock.Bind(new IPEndPoint(wifi.LocalIp, 0));
         }
 
+        private static IPAddress ResolveViaSystemDns(string host, int timeoutMs)
+        {
+            try
+            {
+                IAsyncResult ar = Dns.BeginGetHostAddresses(host, null, null);
+                if (!ar.AsyncWaitHandle.WaitOne(timeoutMs, false))
+                {
+                    return null;
+                }
+                IPAddress[] addrs = Dns.EndGetHostAddresses(ar);
+                for (int i = 0; i < addrs.Length; i++)
+                {
+                    if (WifiAdapterInfo.IsUsableDnsIpv4(addrs[i]))
+                    {
+                        return addrs[i];
+                    }
+                }
+            }
+            catch
+            {
+                // System DNS unavailable
+            }
+            return null;
+        }
+
         private IPAddress ResolveHost(string host, int timeoutMs)
         {
             IPAddress parsed;
@@ -134,16 +191,22 @@ namespace ObitAutoAuth
 
             byte[] query = BuildDnsAQuery(host);
             ushort txId = (ushort)((query[0] << 8) | query[1]);
+            int dnsTimeoutMs = Math.Min(timeoutMs, 1000);
 
-            for (int i = 0; i < _wifi.DnsServers.Count; i++)
+            List<IPAddress> candidates = new List<IPAddress>(_wifi.DnsServers);
+            WifiAdapterInfo.AddUniqueIp(candidates, IPAddress.Parse("1.1.1.1"));
+            WifiAdapterInfo.AddUniqueIp(candidates, IPAddress.Parse("8.8.8.8"));
+
+            List<string> errors = new List<string>();
+            for (int i = 0; i < candidates.Count; i++)
             {
-                IPAddress dnsServer = _wifi.DnsServers[i];
+                IPAddress dnsServer = candidates[i];
                 try
                 {
                     using (Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                     {
-                        udp.ReceiveTimeout = timeoutMs;
-                        udp.SendTimeout = timeoutMs;
+                        udp.ReceiveTimeout = dnsTimeoutMs;
+                        udp.SendTimeout = dnsTimeoutMs;
                         ApplyUnicastIf(udp, _wifi);
                         udp.SendTo(query, new IPEndPoint(dnsServer, 53));
 
@@ -155,15 +218,26 @@ namespace ObitAutoAuth
                             _dnsCache[host] = resolved.ToString();
                             return resolved;
                         }
+                        errors.Add(dnsServer + ": no A record");
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Try next DNS server
+                    errors.Add(dnsServer + ": " + ex.Message);
                 }
             }
 
-            throw new IOException("DNS resolution failed via Wi-Fi DNS for " + host);
+            IPAddress sysResolved = ResolveViaSystemDns(host, dnsTimeoutMs);
+            if (sysResolved != null)
+            {
+                _dnsCache[host] = sysResolved.ToString();
+                return sysResolved;
+            }
+            errors.Add("system-dns: failed");
+
+            throw new IOException(string.Format(
+                "DNS resolution failed via Wi-Fi DNS for {0} (iface={1}, ip={2}, tried={3})",
+                host, _wifi.Name, _wifi.LocalIp, string.Join("; ", errors.ToArray())));
         }
 
         private static byte[] BuildDnsAQuery(string host)

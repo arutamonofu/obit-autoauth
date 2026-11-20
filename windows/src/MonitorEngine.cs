@@ -209,20 +209,18 @@ namespace ObitAutoAuth
                 {
                     _log.Info("Connectivity restored (failStreak was " + _failStreak + ")");
                 }
-                _failStreak = 0;
-                EmitState(AppStatus.Online, string.Empty);
-                if (manualTrigger)
-                {
-                    EmitNotify("online", "Авторизация активна",
-                        "Повторный вход не требуется.",
-                        ToolTipIcon.Info, true);
-                }
+                CompleteAsOnline(manualTrigger);
                 return;
             }
 
             WifiAdapterInfo wifi = WifiAdapterInfo.DetectActive();
             if (wifi == null)
             {
+                if (forceBypass && ObitPortalClient.FastPathDefaultOnline())
+                {
+                    CompleteAsOnline(manualTrigger);
+                    return;
+                }
                 _failStreak = 0;
                 EmitState(AppStatus.WifiDisconnected, string.Empty);
                 if (manualTrigger)
@@ -260,14 +258,7 @@ namespace ObitAutoAuth
             {
                 if (ObitPortalClient.FastPathDefaultOnline())
                 {
-                    _failStreak = 0;
-                    EmitState(AppStatus.Online, string.Empty);
-                    if (manualTrigger)
-                    {
-                        EmitNotify("online", "Авторизация активна",
-                            "Повторный вход не требуется.",
-                            ToolTipIcon.Info, true);
-                    }
+                    CompleteAsOnline(manualTrigger);
                     return;
                 }
 
@@ -303,6 +294,12 @@ namespace ObitAutoAuth
             }
 
             _log.Warn("Bypass check failed (" + res.Outcome + "): " + res.Message);
+            if (ObitPortalClient.FastPathDefaultOnline())
+            {
+                _log.Info("Default route is online despite bypass failure; keeping Online status");
+                CompleteAsOnline(manualTrigger);
+                return;
+            }
             EmitState(res.Outcome == PortalOutcome.Offline ? AppStatus.Offline : AppStatus.Error, string.Empty);
             if (manualTrigger || _failStreak >= 2)
             {
@@ -314,6 +311,18 @@ namespace ObitAutoAuth
                         ? "Проверьте подключение к Wi-Fi или роутеру."
                         : "Не удалось выполнить вход. Подробности в журнале работы.",
                     ToolTipIcon.Error, manualTrigger);
+            }
+        }
+
+        private void CompleteAsOnline(bool manualTrigger)
+        {
+            _failStreak = 0;
+            EmitState(AppStatus.Online, string.Empty);
+            if (manualTrigger)
+            {
+                EmitNotify("online", "Авторизация активна",
+                    "Повторный вход не требуется.",
+                    ToolTipIcon.Info, true);
             }
         }
 
