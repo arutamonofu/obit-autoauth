@@ -77,24 +77,24 @@ def render_tray_symbolic_svg(icon_key: str) -> str:
     """Render a 16x16 freedesktop/KDE symbolic SVG icon with semantic status badge."""
     mark_opacity = ' opacity="0.45"' if icon_key == "gray" else ""
     if icon_key == "gray":
-        badge = '<circle cx="12.5" cy="12.5" r="2.3" fill="#8A8A8A"/>'
+        badge = '<circle cx="11.8" cy="11.8" r="3.1" fill="#8A8A8A"/>'
     elif icon_key == "green":
         badge = (
-            '<circle cx="12.5" cy="12.5" r="2.8" class="ColorScheme-PositiveText success" fill="#16A34A"/>\n'
-            '  <path d="M11.1 12.5 L12.1 13.5 L14.0 11.5" stroke="#FFFFFF" stroke-width="1.3" '
+            '<circle cx="11.8" cy="11.8" r="3.8" class="ColorScheme-PositiveText success" fill="#16A34A"/>\n'
+            '  <path d="M9.9 11.8 L11.2 13.2 L13.8 10.4" stroke="#FFFFFF" stroke-width="1.6" '
             'stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
         )
     elif icon_key == "red":
         badge = (
-            '<circle cx="12.5" cy="12.5" r="2.8" class="ColorScheme-NegativeText error" fill="#DC2626"/>\n'
-            '  <path d="M11.4 11.4 L13.6 13.6 M13.6 11.4 L11.4 13.6" stroke="#FFFFFF" stroke-width="1.3" '
+            '<circle cx="11.8" cy="11.8" r="3.8" class="ColorScheme-NegativeText error" fill="#DC2626"/>\n'
+            '  <path d="M10.3 10.3 L13.3 13.3 M13.3 10.3 L10.3 13.3" stroke="#FFFFFF" stroke-width="1.6" '
             'stroke-linecap="round" fill="none"/>'
         )
     else:
         badge = (
-            '<circle cx="12.5" cy="12.5" r="2.8" class="ColorScheme-NeutralText warning" fill="#F59E0B"/>\n'
-            '  <path d="M12.5 10.9 L12.5 12.7" stroke="#18181B" stroke-width="1.3" stroke-linecap="round"/>\n'
-            '  <circle cx="12.5" cy="13.8" r="0.65" fill="#18181B"/>'
+            '<circle cx="11.8" cy="11.8" r="3.8" class="ColorScheme-NeutralText warning" fill="#F59E0B"/>\n'
+            '  <path d="M11.8 9.6 L11.8 12.1" stroke="#18181B" stroke-width="1.7" stroke-linecap="round"/>\n'
+            '  <circle cx="11.8" cy="13.7" r="0.95" fill="#18181B"/>'
         )
 
     return (
@@ -108,7 +108,7 @@ def render_tray_symbolic_svg(icon_key: str) -> str:
         '    </style>\n'
         '    <mask id="badge-cutout">\n'
         '      <rect width="16" height="16" fill="#FFFFFF"/>\n'
-        '      <circle cx="12.5" cy="12.5" r="3.5" fill="#000000"/>\n'
+        '      <circle cx="11.8" cy="11.8" r="4.7" fill="#000000"/>\n'
         '    </mask>\n'
         '  </defs>\n'
         f'  <path d="{_OBIT_O_PATH}" class="ColorScheme-Text" fill="currentColor" fill-rule="evenodd" '

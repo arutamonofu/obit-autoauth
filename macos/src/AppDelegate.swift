@@ -199,8 +199,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 return true
             }
 
-            let badgeCenter = NSPoint(x: 13.7, y: 13.7)
-            let cutoutRadius: CGFloat = 4.1
+            let badgeCenter = NSPoint(x: 13.2, y: 13.2)
+            let cutoutRadius: CGFloat = 5.0
             NSGraphicsContext.saveGraphicsState()
             NSGraphicsContext.current?.compositingOperation = .clear
             NSBezierPath(ovalIn: NSRect(
@@ -215,25 +215,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             case .green:
                 NSColor.black.setStroke()
                 let check = NSBezierPath()
-                check.lineWidth = 1.65
+                check.lineWidth = 1.9
                 check.lineCapStyle = .round
                 check.lineJoinStyle = .round
-                check.move(to: NSPoint(x: 11.4, y: 13.8))
-                check.line(to: NSPoint(x: 12.9, y: 15.3))
-                check.line(to: NSPoint(x: 15.9, y: 12.1))
+                check.move(to: NSPoint(x: 10.4, y: 13.4))
+                check.line(to: NSPoint(x: 12.2, y: 15.2))
+                check.line(to: NSPoint(x: 15.8, y: 11.3))
                 check.stroke()
             case .orange:
                 NSColor.black.setStroke()
                 let stem = NSBezierPath()
-                stem.lineWidth = 1.7
+                stem.lineWidth = 1.9
                 stem.lineCapStyle = .round
-                stem.move(to: NSPoint(x: 13.7, y: 11.3))
-                stem.line(to: NSPoint(x: 13.7, y: 13.9))
+                stem.move(to: NSPoint(x: 13.2, y: 10.3))
+                stem.line(to: NSPoint(x: 13.2, y: 13.4))
                 stem.stroke()
                 NSColor.black.setFill()
-                NSBezierPath(ovalIn: NSRect(x: 12.85, y: 15.1, width: 1.7, height: 1.7)).fill()
+                NSBezierPath(ovalIn: NSRect(x: 12.15, y: 14.8, width: 2.1, height: 2.1)).fill()
             case .red:
-                let r: CGFloat = 3.4
+                let r: CGFloat = 4.2
                 NSColor.black.setFill()
                 NSBezierPath(ovalIn: NSRect(
                     x: badgeCenter.x - r,
@@ -245,12 +245,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 NSGraphicsContext.current?.compositingOperation = .clear
                 NSColor.black.setStroke()
                 let stem = NSBezierPath()
-                stem.lineWidth = 1.5
+                stem.lineWidth = 1.7
                 stem.lineCapStyle = .round
-                stem.move(to: NSPoint(x: 13.7, y: 11.6))
-                stem.line(to: NSPoint(x: 13.7, y: 13.8))
+                stem.move(to: NSPoint(x: 13.2, y: 10.7))
+                stem.line(to: NSPoint(x: 13.2, y: 13.3))
                 stem.stroke()
-                NSBezierPath(ovalIn: NSRect(x: 13.0, y: 14.8, width: 1.4, height: 1.4)).fill()
+                NSBezierPath(ovalIn: NSRect(x: 12.3, y: 14.4, width: 1.8, height: 1.8)).fill()
                 NSGraphicsContext.restoreGraphicsState()
             case .gray:
                 break

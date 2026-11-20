@@ -281,9 +281,9 @@ namespace ObitAutoAuth
                     g.FillPath(fgBrush, mark);
                 }
 
-                float cx = 12.5f * s;
-                float cy = 12.5f * s;
-                float cutR = 3.5f * s;
+                float cx = 11.8f * s;
+                float cy = 11.8f * s;
+                float cutR = 4.7f * s;
                 g.CompositingMode = CompositingMode.SourceCopy;
                 using (SolidBrush clearBrush = new SolidBrush(Color.Transparent))
                 {
@@ -293,7 +293,7 @@ namespace ObitAutoAuth
 
                 if (isInactive)
                 {
-                    float r = 2.3f * s;
+                    float r = 3.1f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(138, 138, 138)))
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
@@ -301,41 +301,41 @@ namespace ObitAutoAuth
                 }
                 else if (dotColor == Color.LimeGreen)
                 {
-                    float r = 2.8f * s;
+                    float r = 3.8f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(22, 163, 74)))
-                    using (Pen p = new Pen(Color.White, 1.3f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                    using (Pen p = new Pen(Color.White, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
                         g.DrawLines(p, new PointF[]
                         {
-                            new PointF(11.1f * s, 12.5f * s),
-                            new PointF(12.1f * s, 13.5f * s),
-                            new PointF(14.0f * s, 11.5f * s),
+                            new PointF(9.9f * s, 11.8f * s),
+                            new PointF(11.2f * s, 13.2f * s),
+                            new PointF(13.8f * s, 10.4f * s),
                         });
                     }
                 }
                 else if (dotColor == Color.Crimson)
                 {
-                    float r = 2.8f * s;
+                    float r = 3.8f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(220, 38, 38)))
-                    using (Pen p = new Pen(Color.White, 1.3f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    using (Pen p = new Pen(Color.White, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
-                        g.DrawLine(p, 11.4f * s, 11.4f * s, 13.6f * s, 13.6f * s);
-                        g.DrawLine(p, 13.6f * s, 11.4f * s, 11.4f * s, 13.6f * s);
+                        g.DrawLine(p, 10.3f * s, 10.3f * s, 13.3f * s, 13.3f * s);
+                        g.DrawLine(p, 13.3f * s, 10.3f * s, 10.3f * s, 13.3f * s);
                     }
                 }
                 else
                 {
-                    float r = 2.8f * s;
+                    float r = 3.8f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(245, 158, 11)))
-                    using (Pen p = new Pen(Color.FromArgb(24, 24, 27), 1.3f * s) { StartCap = LineCap.Round })
+                    using (Pen p = new Pen(Color.FromArgb(24, 24, 27), 1.7f * s) { StartCap = LineCap.Round })
                     using (SolidBrush dot = new SolidBrush(Color.FromArgb(24, 24, 27)))
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
-                        g.DrawLine(p, cx, 10.9f * s, cx, 12.7f * s);
-                        float dr = 0.65f * s;
-                        g.FillEllipse(dot, cx - dr, 13.8f * s - dr, dr * 2f, dr * 2f);
+                        g.DrawLine(p, cx, 9.6f * s, cx, 12.1f * s);
+                        float dr = 0.95f * s;
+                        g.FillEllipse(dot, cx - dr, 13.7f * s - dr, dr * 2f, dr * 2f);
                     }
                 }
 
