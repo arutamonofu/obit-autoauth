@@ -210,7 +210,7 @@ namespace ObitAutoAuth
         {
             if (e.Category == UserPreferenceCategory.General || e.Category == UserPreferenceCategory.Color)
             {
-                InvokeUi(() => UpdateTrayIcon(_lastDotColor));
+                RunOnUi(delegate { UpdateTrayIcon(_lastDotColor); });
             }
         }
 
@@ -221,7 +221,7 @@ namespace ObitAutoAuth
                 using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
                 {
                     object val = key != null ? key.GetValue("SystemUsesLightTheme") : null;
-                    if (val is int i) return i != 0;
+                    if (val is int) return (int)val != 0;
                 }
             }
             catch { }
@@ -230,7 +230,7 @@ namespace ObitAutoAuth
 
         private static GraphicsPath CreateObitMarkPath(float scale, float offsetX, float offsetY)
         {
-            PointF Pt(float x, float y) => new PointF(offsetX + x * scale, offsetY + y * scale);
+            Func<float, float, PointF> Pt = (x, y) => new PointF(offsetX + x * scale, offsetY + y * scale);
             GraphicsPath path = new GraphicsPath(FillMode.Alternate);
 
             // Outer contour of official OBIT 'O' mark (0..14 box)
