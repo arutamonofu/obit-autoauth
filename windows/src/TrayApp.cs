@@ -57,6 +57,7 @@ namespace ObitAutoAuth
         private string _lastAlertKey = string.Empty;
         private DateTime _lastAlertUtc = DateTime.MinValue;
         private string _lastPortalUrl = string.Empty;
+        private Color _lastDotColor = Color.Gray;
         private Icon _currentIcon;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -119,6 +120,7 @@ namespace ObitAutoAuth
             _timer.Start();
 
             SystemEvents.PowerModeChanged += OnPowerModeChanged;
+            SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
             NetworkChange.NetworkAddressChanged += OnNetworkChanged;
 
             _wakeWaitHandle = ThreadPool.RegisterWaitForSingleObject(
@@ -204,37 +206,139 @@ namespace ObitAutoAuth
             });
         }
 
+        private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+        {
+            if (e.Category == UserPreferenceCategory.General || e.Category == UserPreferenceCategory.Color)
+            {
+                InvokeUi(() => UpdateTrayIcon(_lastDotColor));
+            }
+        }
+
+        private static bool IsLightTaskbar()
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    object val = key != null ? key.GetValue("SystemUsesLightTheme") : null;
+                    if (val is int i) return i != 0;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private static GraphicsPath CreateObitMarkPath(float scale, float offsetX, float offsetY)
+        {
+            PointF Pt(float x, float y) => new PointF(offsetX + x * scale, offsetY + y * scale);
+            GraphicsPath path = new GraphicsPath(FillMode.Alternate);
+
+            // Outer contour of official OBIT 'O' mark (0..14 box)
+            path.StartFigure();
+            path.AddBezier(Pt(7.55f, 0.00f), Pt(4.01f, 0.00f), Pt(1.18f, 2.89f), Pt(1.18f, 6.44f));
+            path.AddLine(Pt(1.18f, 6.44f), Pt(0.00f, 6.44f));
+            path.AddLine(Pt(0.00f, 6.44f), Pt(0.00f, 14.00f));
+            path.AddLine(Pt(0.00f, 14.00f), Pt(7.55f, 14.00f));
+            path.AddLine(Pt(7.55f, 14.00f), Pt(7.55f, 12.82f));
+            path.AddBezier(Pt(7.55f, 12.82f), Pt(11.10f, 12.82f), Pt(14.00f, 9.92f), Pt(14.00f, 6.38f));
+            path.AddBezier(Pt(14.00f, 6.38f), Pt(14.00f, 2.89f), Pt(11.10f, 0.00f), Pt(7.55f, 0.00f));
+            path.CloseFigure();
+
+            // Inner cutout
+            path.StartFigure();
+            path.AddBezier(Pt(7.55f, 3.37f), Pt(9.27f, 3.37f), Pt(10.62f, 4.73f), Pt(10.62f, 6.44f));
+            path.AddBezier(Pt(10.62f, 6.44f), Pt(10.62f, 8.15f), Pt(9.27f, 9.51f), Pt(7.55f, 9.51f));
+            path.AddLine(Pt(7.55f, 9.51f), Pt(7.55f, 6.44f));
+            path.AddLine(Pt(7.55f, 6.44f), Pt(4.48f, 6.44f));
+            path.AddBezier(Pt(4.48f, 6.44f), Pt(4.48f, 4.73f), Pt(5.84f, 3.37f), Pt(7.55f, 3.37f));
+            path.CloseFigure();
+
+            return path;
+        }
+
         private void UpdateTrayIcon(Color dotColor)
         {
+            _lastDotColor = dotColor;
             Size target = SystemInformation.SmallIconSize;
             int size = Math.Max(16, Math.Min(48, Math.Max(target.Width, target.Height)));
             float s = size / 16f;
+            bool lightTaskbar = IsLightTaskbar();
+            bool isInactive = dotColor == Color.Gray;
+            int alpha = isInactive ? 140 : 255;
+            Color fgColor = lightTaskbar
+                ? Color.FromArgb(alpha, 27, 27, 27)
+                : Color.FromArgb(alpha, 255, 255, 255);
 
             using (Bitmap bmp = new Bitmap(size, size))
             using (Graphics g = Graphics.FromImage(bmp))
             {
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
-                using (SolidBrush outer = new SolidBrush(Color.FromArgb(40, 40, 40)))
+
+                using (GraphicsPath mark = CreateObitMarkPath(14.5f / 14.0f * s, 0.75f * s, 0.75f * s))
+                using (SolidBrush fgBrush = new SolidBrush(fgColor))
                 {
-                    g.FillEllipse(outer, 0.5f * s, 0.5f * s, 15.0f * s, 15.0f * s);
+                    g.FillPath(fgBrush, mark);
                 }
-                using (SolidBrush inner = new SolidBrush(dotColor))
+
+                float cx = 12.5f * s;
+                float cy = 12.5f * s;
+                float cutR = 3.5f * s;
+                g.CompositingMode = CompositingMode.SourceCopy;
+                using (SolidBrush clearBrush = new SolidBrush(Color.Transparent))
                 {
-                    g.FillEllipse(inner, 1.5f * s, 1.5f * s, 13.0f * s, 13.0f * s);
+                    g.FillEllipse(clearBrush, cx - cutR, cy - cutR, cutR * 2f, cutR * 2f);
                 }
-                using (SolidBrush keyhole = new SolidBrush(Color.FromArgb(24, 24, 24)))
+                g.CompositingMode = CompositingMode.SourceOver;
+
+                if (isInactive)
                 {
-                    g.FillEllipse(keyhole, 5.1f * s, 2.8f * s, 5.8f * s, 5.8f * s);
-                    PointF[] stem = new PointF[]
+                    float r = 2.3f * s;
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(138, 138, 138)))
                     {
-                        new PointF(7.0f * s, 7.6f * s),
-                        new PointF(9.0f * s, 7.6f * s),
-                        new PointF(10.0f * s, 12.6f * s),
-                        new PointF(6.0f * s, 12.6f * s),
-                    };
-                    g.FillPolygon(keyhole, stem);
+                        g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
+                    }
                 }
+                else if (dotColor == Color.LimeGreen)
+                {
+                    float r = 2.8f * s;
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(22, 163, 74)))
+                    using (Pen p = new Pen(Color.White, 1.3f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                    {
+                        g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
+                        g.DrawLines(p, new PointF[]
+                        {
+                            new PointF(11.1f * s, 12.5f * s),
+                            new PointF(12.1f * s, 13.5f * s),
+                            new PointF(14.0f * s, 11.5f * s),
+                        });
+                    }
+                }
+                else if (dotColor == Color.Crimson)
+                {
+                    float r = 2.8f * s;
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(220, 38, 38)))
+                    using (Pen p = new Pen(Color.White, 1.3f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    {
+                        g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
+                        g.DrawLine(p, 11.4f * s, 11.4f * s, 13.6f * s, 13.6f * s);
+                        g.DrawLine(p, 13.6f * s, 11.4f * s, 11.4f * s, 13.6f * s);
+                    }
+                }
+                else
+                {
+                    float r = 2.8f * s;
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(245, 158, 11)))
+                    using (Pen p = new Pen(Color.FromArgb(24, 24, 27), 1.3f * s) { StartCap = LineCap.Round })
+                    using (SolidBrush dot = new SolidBrush(Color.FromArgb(24, 24, 27)))
+                    {
+                        g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
+                        g.DrawLine(p, cx, 10.9f * s, cx, 12.7f * s);
+                        float dr = 0.65f * s;
+                        g.FillEllipse(dot, cx - dr, 13.8f * s - dr, dr * 2f, dr * 2f);
+                    }
+                }
+
                 IntPtr hIcon = bmp.GetHicon();
                 Icon nextIcon = Icon.FromHandle(hIcon);
                 Icon prevIcon = _currentIcon;
@@ -360,6 +464,7 @@ namespace ObitAutoAuth
         private void OnExit(object sender, EventArgs e)
         {
             SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
             NetworkChange.NetworkAddressChanged -= OnNetworkChanged;
             _wakeWaitHandle.Unregister(null);
             _timer.Stop();

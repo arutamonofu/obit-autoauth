@@ -103,13 +103,18 @@ systemctl --user restart obit-auto-auth.service
 echo "[6/6] Настройка автозапуска иконки в трее..."
 AUTOSTART_DIR="${TARGET_HOME}/.config/autostart"
 APPS_DIR="${TARGET_HOME}/.local/share/applications"
-mkdir -p "$AUTOSTART_DIR" "$APPS_DIR"
+ICON_DIR="${TARGET_HOME}/.local/share/icons/hicolor/scalable/apps"
+mkdir -p "$AUTOSTART_DIR" "$APPS_DIR" "$ICON_DIR"
+if [[ -f "${REPO_DIR}/assets/obit-auto-auth.svg" ]]; then
+    cp "${REPO_DIR}/assets/obit-auto-auth.svg" "${ICON_DIR}/obit-auto-auth.svg"
+    gtk-update-icon-cache -f -t "${TARGET_HOME}/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+fi
 DESKTOP_CONTENT="[Desktop Entry]
 Type=Application
 Name=OBIT Wi-Fi Auto-Auth
 Comment=Индикатор автоавторизации Wi-Fi ОБИТ
 Exec=${TRAY_BIN_PATH}
-Icon=network-wireless
+Icon=obit-auto-auth
 Terminal=false
 Categories=Network;Utility;
 X-GNOME-Autostart-enabled=true"

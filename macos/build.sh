@@ -29,6 +29,7 @@ SRC_FILES=(
 rm -rf "$APP_DIR"
 mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources"
 cp "${SCRIPT_DIR}/Resources/Info.plist" "${APP_DIR}/Contents/Info.plist"
+cp "${SCRIPT_DIR}/Resources/AppIcon.icns" "${APP_DIR}/Contents/Resources/AppIcon.icns"
 
 FRAMEWORKS=(-framework AppKit -framework Foundation -framework Network -framework Security -framework SystemConfiguration -framework UserNotifications)
 

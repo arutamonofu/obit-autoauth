@@ -153,45 +153,111 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             self.portalMenuItem.isHidden = self.lastPortalUrl.isEmpty
             self.statusMenuItem.title = p.statusText
             self.statusBarItem.button?.toolTip = p.statusText
-            self.statusBarItem.button?.image = self.renderDotImage(color: self.nsColor(for: p.iconColor))
+            self.statusBarItem.button?.image = self.renderMenuBarIcon(for: p.iconColor)
         }
     }
 
-    private func nsColor(for color: IconColor) -> NSColor {
-        switch color {
-        case .gray:
-            return NSColor(calibratedRed: 0.50, green: 0.50, blue: 0.50, alpha: 1.0)
-        case .green:
-            return NSColor(calibratedRed: 0.20, green: 0.80, blue: 0.20, alpha: 1.0)
-        case .orange:
-            return NSColor(calibratedRed: 1.00, green: 0.65, blue: 0.00, alpha: 1.0)
-        case .red:
-            return NSColor(calibratedRed: 0.86, green: 0.08, blue: 0.24, alpha: 1.0)
+    private func obitMarkPath(scale: CGFloat, offset: NSPoint) -> NSBezierPath {
+        // Official OBIT 'O' mark normalized to 0..14 box, mapped by scale & offset (flipped top-left coords)
+        func pt(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
+            return NSPoint(x: offset.x + x * scale, y: offset.y + y * scale)
         }
+        let path = NSBezierPath()
+        path.windingRule = .evenOdd
+
+        // Outer contour (square bottom-left corner)
+        path.move(to: pt(7.55, 0.00))
+        path.curve(to: pt(1.18, 6.44), controlPoint1: pt(4.01, 0.00), controlPoint2: pt(1.18, 2.89))
+        path.line(to: pt(0.00, 6.44))
+        path.line(to: pt(0.00, 14.00))
+        path.line(to: pt(7.55, 14.00))
+        path.line(to: pt(7.55, 12.82))
+        path.curve(to: pt(14.00, 6.38), controlPoint1: pt(11.10, 12.82), controlPoint2: pt(14.00, 9.92))
+        path.curve(to: pt(7.55, 0.00), controlPoint1: pt(14.00, 2.89), controlPoint2: pt(11.10, 0.00))
+        path.close()
+
+        // Inner cutout
+        path.move(to: pt(7.55, 3.37))
+        path.curve(to: pt(10.62, 6.44), controlPoint1: pt(9.27, 3.37), controlPoint2: pt(10.62, 4.73))
+        path.curve(to: pt(7.55, 9.51), controlPoint1: pt(10.62, 8.15), controlPoint2: pt(9.27, 9.51))
+        path.line(to: pt(7.55, 6.44))
+        path.line(to: pt(4.48, 6.44))
+        path.curve(to: pt(7.55, 3.37), controlPoint1: pt(4.48, 4.73), controlPoint2: pt(5.84, 3.37))
+        path.close()
+
+        return path
     }
 
-    private func renderDotImage(color: NSColor) -> NSImage {
-        let size = NSSize(width: 16, height: 16)
-        let img = NSImage(size: size, flipped: false) { _ in
-            NSColor(calibratedWhite: 0.16, alpha: 1.0).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 0.5, y: 0.5, width: 15.0, height: 15.0)).fill()
+    private func renderMenuBarIcon(for color: IconColor) -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let img = NSImage(size: size, flipped: true) { _ in
+            let fg = NSColor.black.withAlphaComponent(color == .gray ? 0.45 : 1.0)
+            fg.setFill()
+            self.obitMarkPath(scale: 14.5 / 14.0, offset: NSPoint(x: 1.5, y: 1.75)).fill()
 
-            color.setFill()
-            NSBezierPath(ovalIn: NSRect(x: 1.5, y: 1.5, width: 13.0, height: 13.0)).fill()
+            if color == .gray {
+                return true
+            }
 
-            NSColor(calibratedWhite: 0.09, alpha: 1.0).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 5.1, y: 7.4, width: 5.8, height: 5.8)).fill()
+            let badgeCenter = NSPoint(x: 13.7, y: 13.7)
+            let cutoutRadius: CGFloat = 4.1
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current?.compositingOperation = .clear
+            NSBezierPath(ovalIn: NSRect(
+                x: badgeCenter.x - cutoutRadius,
+                y: badgeCenter.y - cutoutRadius,
+                width: cutoutRadius * 2,
+                height: cutoutRadius * 2
+            )).fill()
+            NSGraphicsContext.restoreGraphicsState()
 
-            let stem = NSBezierPath()
-            stem.move(to: NSPoint(x: 7.0, y: 8.4))
-            stem.line(to: NSPoint(x: 9.0, y: 8.4))
-            stem.line(to: NSPoint(x: 10.0, y: 3.4))
-            stem.line(to: NSPoint(x: 6.0, y: 3.4))
-            stem.close()
-            stem.fill()
+            switch color {
+            case .green:
+                NSColor.black.setStroke()
+                let check = NSBezierPath()
+                check.lineWidth = 1.65
+                check.lineCapStyle = .round
+                check.lineJoinStyle = .round
+                check.move(to: NSPoint(x: 11.4, y: 13.8))
+                check.line(to: NSPoint(x: 12.9, y: 15.3))
+                check.line(to: NSPoint(x: 15.9, y: 12.1))
+                check.stroke()
+            case .orange:
+                NSColor.black.setStroke()
+                let stem = NSBezierPath()
+                stem.lineWidth = 1.7
+                stem.lineCapStyle = .round
+                stem.move(to: NSPoint(x: 13.7, y: 11.3))
+                stem.line(to: NSPoint(x: 13.7, y: 13.9))
+                stem.stroke()
+                NSColor.black.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 12.85, y: 15.1, width: 1.7, height: 1.7)).fill()
+            case .red:
+                let r: CGFloat = 3.4
+                NSColor.black.setFill()
+                NSBezierPath(ovalIn: NSRect(
+                    x: badgeCenter.x - r,
+                    y: badgeCenter.y - r,
+                    width: r * 2,
+                    height: r * 2
+                )).fill()
+                NSGraphicsContext.saveGraphicsState()
+                NSGraphicsContext.current?.compositingOperation = .clear
+                NSColor.black.setStroke()
+                let stem = NSBezierPath()
+                stem.lineWidth = 1.5
+                stem.lineCapStyle = .round
+                stem.move(to: NSPoint(x: 13.7, y: 11.6))
+                stem.line(to: NSPoint(x: 13.7, y: 13.8))
+                stem.stroke()
+                NSBezierPath(ovalIn: NSRect(x: 13.0, y: 14.8, width: 1.4, height: 1.4)).fill()
+                NSGraphicsContext.restoreGraphicsState()
+            case .gray:
+                break
+            }
             return true
         }
-        img.isTemplate = false
+        img.isTemplate = true
         return img
     }
 

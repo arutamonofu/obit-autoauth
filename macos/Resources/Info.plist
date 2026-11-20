@@ -8,6 +8,8 @@
     <string>OBIT Auto-Auth</string>
     <key>CFBundleExecutable</key>
     <string>ObitAutoAuth</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>ru.obit.autoauth</string>
     <key>CFBundleInfoDictionaryVersion</key>

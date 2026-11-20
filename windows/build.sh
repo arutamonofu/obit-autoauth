@@ -19,5 +19,5 @@ PY
 
 mkdir -p "$DIST_DIR"
 rm -f "$OUT_ZIP"
-(cd "$SCRIPT_DIR" && zip -r "$OUT_ZIP" Install.bat Uninstall.bat README.txt src/NetworkBypass.cs src/ObitPortalClient.cs src/MonitorEngine.cs src/TrayApp.cs)
+(cd "$SCRIPT_DIR" && zip -r "$OUT_ZIP" Install.bat Uninstall.bat README.txt Resources/app.ico src/NetworkBypass.cs src/ObitPortalClient.cs src/MonitorEngine.cs src/TrayApp.cs)
 unzip -l "$OUT_ZIP"

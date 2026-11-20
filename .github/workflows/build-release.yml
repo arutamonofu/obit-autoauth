@@ -67,6 +67,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
           & $csc /nologo /target:winexe /optimize+ /utf8output /codepage:65001 `
+              /win32icon:"windows\Resources\app.ico" `
               /out:"$stage\ObitAutoAuth.exe" `
               /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll `
               windows\src\*.cs

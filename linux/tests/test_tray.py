@@ -141,9 +141,12 @@ class TrayHelpersTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             icons_dir = ensure_tray_icons(Path(tmp) / "icons")
             for color in ("gray", "green", "orange", "red"):
-                p = icons_dir / f"obit-tray-{color}.svg"
+                p = icons_dir / f"obit-tray-{color}-symbolic.svg"
                 self.assertTrue(p.exists())
-                self.assertIn("<svg", p.read_text(encoding="utf-8"))
+                svg = p.read_text(encoding="utf-8")
+                self.assertIn("<svg", svg)
+                self.assertIn('viewBox="0 0 16 16"', svg)
+                self.assertIn("ColorScheme-Text", svg)
 
     def test_autostart_toggle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

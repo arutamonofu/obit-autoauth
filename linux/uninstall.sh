@@ -18,7 +18,7 @@ fi
 
 echo "[1/4] Остановка и удаление systemd --user сервиса и трея..."
 pkill -f "obit_auth\.tray" 2>/dev/null || true
-rm -f "$AUTOSTART_PATH" "$APP_DESKTOP_PATH"
+rm -f "$AUTOSTART_PATH" "$APP_DESKTOP_PATH" "${HOME}/.local/share/icons/hicolor/scalable/apps/obit-auto-auth.svg"
 systemctl --user disable --now obit-auto-auth.service 2>/dev/null || true
 rm -f "$UNIT_PATH"
 systemctl --user daemon-reload || true

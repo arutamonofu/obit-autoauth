@@ -25,12 +25,21 @@ from obit_auth.state import (
 DEFAULT_AUTOSTART_PATH = Path.home() / ".config" / "autostart" / "obit-auto-auth-tray.desktop"
 DEFAULT_TRAY_EXEC = "/usr/local/bin/obit-auth-tray"
 
-ICON_COLORS: dict[str, str] = {
-    "gray": "#808080",
-    "green": "#32CD32",
-    "orange": "#FFA500",
-    "red": "#DC143C",
-}
+TRAY_ICON_KEYS = ("gray", "green", "orange", "red")
+
+# Official OBIT 'O' mark normalized to 1..15 inside a 16x16 symbolic viewBox (14x14 live area)
+_OBIT_O_PATH = (
+    "M 8.55 1.00 "
+    "C 5.01 1.00 2.18 3.89 2.18 7.44 "
+    "L 1.00 7.44 L 1.00 15.00 L 8.55 15.00 L 8.55 13.82 "
+    "C 12.10 13.82 15.00 10.92 15.00 7.38 "
+    "C 15.00 3.89 12.10 1.00 8.55 1.00 Z "
+    "M 8.55 4.37 "
+    "C 10.27 4.37 11.62 5.73 11.62 7.44 "
+    "C 11.62 9.15 10.27 10.51 8.55 10.51 "
+    "L 8.55 7.44 L 5.48 7.44 "
+    "C 5.48 5.73 6.84 4.37 8.55 4.37 Z"
+)
 
 
 def format_tray_presentation(state: DaemonState | None, daemon_alive: bool) -> tuple[str, str, bool]:
@@ -64,24 +73,57 @@ def format_tray_presentation(state: DaemonState | None, daemon_alive: bool) -> t
     return ("orange", "Ошибка авторизации", False)
 
 
-def render_dot_svg(fill_hex: str) -> str:
-    """Render a 16x16 SVG keyhole status icon matching the Windows tray indicator."""
+def render_tray_symbolic_svg(icon_key: str) -> str:
+    """Render a 16x16 freedesktop/KDE symbolic SVG icon with semantic status badge."""
+    mark_opacity = ' opacity="0.45"' if icon_key == "gray" else ""
+    if icon_key == "gray":
+        badge = '<circle cx="12.5" cy="12.5" r="2.3" fill="#8A8A8A"/>'
+    elif icon_key == "green":
+        badge = (
+            '<circle cx="12.5" cy="12.5" r="2.8" class="ColorScheme-PositiveText success" fill="#16A34A"/>\n'
+            '  <path d="M11.1 12.5 L12.1 13.5 L14.0 11.5" stroke="#FFFFFF" stroke-width="1.3" '
+            'stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
+        )
+    elif icon_key == "red":
+        badge = (
+            '<circle cx="12.5" cy="12.5" r="2.8" class="ColorScheme-NegativeText error" fill="#DC2626"/>\n'
+            '  <path d="M11.4 11.4 L13.6 13.6 M13.6 11.4 L11.4 13.6" stroke="#FFFFFF" stroke-width="1.3" '
+            'stroke-linecap="round" fill="none"/>'
+        )
+    else:
+        badge = (
+            '<circle cx="12.5" cy="12.5" r="2.8" class="ColorScheme-NeutralText warning" fill="#F59E0B"/>\n'
+            '  <path d="M12.5 10.9 L12.5 12.7" stroke="#18181B" stroke-width="1.3" stroke-linecap="round"/>\n'
+            '  <circle cx="12.5" cy="13.8" r="0.65" fill="#18181B"/>'
+        )
+
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">\n'
-        '  <circle cx="8" cy="8" r="7.5" fill="#282828"/>\n'
-        f'  <circle cx="8" cy="8" r="6.5" fill="{fill_hex}"/>\n'
-        '  <circle cx="8" cy="5.7" r="2.9" fill="#181818"/>\n'
-        '  <path d="M7 7.6 L9 7.6 L10 12.6 L6 12.6 Z" fill="#181818"/>\n'
-        "</svg>\n"
+        '  <defs>\n'
+        '    <style id="current-color-scheme" type="text/css">\n'
+        '      .ColorScheme-Text { color: #dedede; }\n'
+        '      .ColorScheme-PositiveText { color: #16a34a; }\n'
+        '      .ColorScheme-NeutralText { color: #f59e0b; }\n'
+        '      .ColorScheme-NegativeText { color: #dc2626; }\n'
+        '    </style>\n'
+        '    <mask id="badge-cutout">\n'
+        '      <rect width="16" height="16" fill="#FFFFFF"/>\n'
+        '      <circle cx="12.5" cy="12.5" r="3.5" fill="#000000"/>\n'
+        '    </mask>\n'
+        '  </defs>\n'
+        f'  <path d="{_OBIT_O_PATH}" class="ColorScheme-Text" fill="currentColor" fill-rule="evenodd" '
+        f'mask="url(#badge-cutout)"{mark_opacity}/>\n'
+        f'  {badge}\n'
+        '</svg>\n'
     )
 
 
 def ensure_tray_icons(icons_dir: Path) -> Path:
-    """Write SVG tray icons into icons_dir and return the directory path."""
+    """Write symbolic SVG tray icons into icons_dir and return the directory path."""
     icons_dir.mkdir(parents=True, exist_ok=True)
-    for key, color in ICON_COLORS.items():
-        icon_file = icons_dir / f"obit-tray-{key}.svg"
-        content = render_dot_svg(color)
+    for key in TRAY_ICON_KEYS:
+        icon_file = icons_dir / f"obit-tray-{key}-symbolic.svg"
+        content = render_tray_symbolic_svg(key)
         if not icon_file.exists() or icon_file.read_text(encoding="utf-8") != content:
             icon_file.write_text(content, encoding="utf-8")
     return icons_dir
@@ -121,7 +163,7 @@ def set_autostart_enabled(
         "Name=OBIT Wi-Fi Auto-Auth\n"
         "Comment=Автоматический вход в Wi-Fi ОБИТ\n"
         f"Exec={exec_cmd}\n"
-        "Icon=network-wireless\n"
+        "Icon=obit-auto-auth\n"
         "Terminal=false\n"
         "Categories=Network;Utility;\n"
         "X-GNOME-Autostart-enabled=true\n",
@@ -178,7 +220,7 @@ class TrayApp:
 
         self.indicator = self.AppIndicator.Indicator.new(
             "obit-auto-auth",
-            "obit-tray-gray",
+            "obit-tray-gray-symbolic",
             self.AppIndicator.IndicatorCategory.APPLICATION_STATUS,
         )
         self.indicator.set_icon_theme_path(str(self.icons_dir))
@@ -262,7 +304,7 @@ class TrayApp:
         icon_key, status_text, show_portal = format_tray_presentation(state, alive)
 
         self.status_item.set_label(status_text)
-        self.indicator.set_icon_full(f"obit-tray-{icon_key}", status_text)
+        self.indicator.set_icon_full(f"obit-tray-{icon_key}-symbolic", status_text)
 
         self._last_portal_url = state.portal_url if (state and show_portal) else ""
         if self._last_portal_url:
@@ -288,7 +330,7 @@ class TrayApp:
 
     def _on_check_now(self, _item: object) -> None:
         self.status_item.set_label("Проверка входа...")
-        self.indicator.set_icon_full("obit-tray-gray", "Проверка входа...")
+        self.indicator.set_icon_full("obit-tray-gray-symbolic", "Проверка входа...")
         state = read_state(self.state_path)
         if state is not None and state.status != "stopped" and is_pid_alive(state.pid):
             try:

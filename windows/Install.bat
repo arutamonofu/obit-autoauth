@@ -45,7 +45,9 @@ if exist "%PREBUILT_EXE%" (
     powershell -NoProfile -Command "Unblock-File -Path $env:EXE_PATH" >nul 2>&1
 ) else (
     echo [2/4] Сборка ObitAutoAuth.exe...
-    "%CSC%" /nologo /target:winexe /optimize+ /utf8output /codepage:65001 /out:"%EXE_PATH%" ^
+    set "ICON_OPT="
+    if exist "%~dp0Resources\app.ico" set "ICON_OPT=/win32icon:\"%~dp0Resources\app.ico\""
+    "%CSC%" /nologo /target:winexe /optimize+ /utf8output /codepage:65001 %ICON_OPT% /out:"%EXE_PATH%" ^
         /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll "%SRC_DIR%\*.cs"
 
     if errorlevel 1 (
