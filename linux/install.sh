@@ -107,6 +107,9 @@ ICON_DIR="${TARGET_HOME}/.local/share/icons/hicolor/scalable/apps"
 mkdir -p "$AUTOSTART_DIR" "$APPS_DIR" "$ICON_DIR"
 if [[ -f "${REPO_DIR}/assets/obit-auto-auth.svg" ]]; then
     cp "${REPO_DIR}/assets/obit-auto-auth.svg" "${ICON_DIR}/obit-auto-auth.svg"
+    if [[ ! -f "${TARGET_HOME}/.local/share/icons/hicolor/index.theme" && -f /usr/share/icons/hicolor/index.theme ]]; then
+        cp /usr/share/icons/hicolor/index.theme "${TARGET_HOME}/.local/share/icons/hicolor/index.theme"
+    fi
     gtk-update-icon-cache -f -t "${TARGET_HOME}/.local/share/icons/hicolor" >/dev/null 2>&1 || true
 fi
 DESKTOP_CONTENT="[Desktop Entry]
@@ -120,6 +123,7 @@ Categories=Network;Utility;
 X-GNOME-Autostart-enabled=true"
 printf '%s\n' "$DESKTOP_CONTENT" > "${AUTOSTART_DIR}/obit-auto-auth-tray.desktop"
 printf '%s\n' "$DESKTOP_CONTENT" > "${APPS_DIR}/obit-auto-auth-tray.desktop"
+update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
 
 pkill -f "obit_auth\.tray" 2>/dev/null || true
 if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then

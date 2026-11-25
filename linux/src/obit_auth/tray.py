@@ -27,18 +27,46 @@ DEFAULT_TRAY_EXEC = "/usr/local/bin/obit-auth-tray"
 
 TRAY_ICON_KEYS = ("gray", "green", "orange", "red")
 
-# Official OBIT 'O' mark normalized to 1..15 inside a 16x16 symbolic viewBox (14x14 live area)
+# Official OBIT 'O' mark normalized to 1..15 inside a 16x16 symbolic viewBox (14x14 live area),
+# with the bottom-right badge cutout (cx=11.8, cy=11.8, r=4.7) pre-subtracted so GTK symbolic
+# recoloring never breaks <mask> elements.
 _OBIT_O_PATH = (
     "M 8.55 1.00 "
     "C 5.01 1.00 2.18 3.89 2.18 7.44 "
-    "L 1.00 7.44 L 1.00 15.00 L 8.55 15.00 L 8.55 13.82 "
-    "C 12.10 13.82 15.00 10.92 15.00 7.38 "
-    "C 15.00 3.89 12.10 1.00 8.55 1.00 Z "
-    "M 8.55 4.37 "
-    "C 10.27 4.37 11.62 5.73 11.62 7.44 "
-    "C 11.62 9.15 10.27 10.51 8.55 10.51 "
+    "L 1.00 7.44 L 1.00 15.00 L 8.36 15.00 "
+    "A 4.70 4.70 0 0 1 8.55 8.40 "
     "L 8.55 7.44 L 5.48 7.44 "
-    "C 5.48 5.73 6.84 4.37 8.55 4.37 Z"
+    "C 5.48 5.73 6.84 4.37 8.55 4.37 "
+    "C 10.16 4.37 11.44 5.56 11.60 7.10 "
+    "A 4.70 4.70 0 0 1 14.90 8.26 "
+    "C 14.96 7.96 15.00 7.66 15.00 7.38 "
+    "C 15.00 3.89 12.10 1.00 8.55 1.00 Z"
+)
+
+_BADGE_CIRCLE_PATH = (
+    "M 8.00 11.80 "
+    "A 3.80 3.80 0 1 0 15.60 11.80 "
+    "A 3.80 3.80 0 1 0 8.00 11.80 Z"
+)
+
+_BADGE_CHECK_CUTOUT = "M 9.35 11.85 L 11.20 13.80 L 14.35 10.40 L 13.35 9.45 L 11.20 11.80 L 10.35 10.90 Z"
+
+_BADGE_EXCL_CUTOUT = (
+    "M 11.80 8.85 "
+    "A 0.80 0.80 0 0 1 12.60 9.65 "
+    "L 12.60 11.45 "
+    "A 0.80 0.80 0 0 1 11.00 11.45 "
+    "L 11.00 9.65 "
+    "A 0.80 0.80 0 0 1 11.80 8.85 Z "
+    "M 10.92 13.65 "
+    "A 0.88 0.88 0 1 0 12.68 13.65 "
+    "A 0.88 0.88 0 1 0 10.92 13.65 Z"
+)
+
+_BADGE_X_CUTOUT = (
+    "M 10.59 9.71 L 11.80 10.92 L 13.01 9.71 L 13.89 10.59 L 12.68 11.80 "
+    "L 13.89 13.01 L 13.01 13.89 L 11.80 12.68 L 10.59 13.89 L 9.71 13.01 "
+    "L 10.92 11.80 L 9.71 10.59 Z"
 )
 
 
@@ -77,24 +105,21 @@ def render_tray_symbolic_svg(icon_key: str) -> str:
     """Render a 16x16 freedesktop/KDE symbolic SVG icon with semantic status badge."""
     mark_opacity = ' opacity="0.45"' if icon_key == "gray" else ""
     if icon_key == "gray":
-        badge = '<circle cx="11.8" cy="11.8" r="3.1" fill="#8A8A8A"/>'
+        badge = '<circle cx="11.8" cy="11.8" r="3.1" class="ColorScheme-Text" fill="currentColor" opacity="0.45"/>'
     elif icon_key == "green":
         badge = (
-            '<circle cx="11.8" cy="11.8" r="3.8" class="ColorScheme-PositiveText success" fill="#16A34A"/>\n'
-            '  <path d="M9.9 11.8 L11.2 13.2 L13.8 10.4" stroke="#FFFFFF" stroke-width="1.6" '
-            'stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
+            f'<path d="{_BADGE_CIRCLE_PATH} {_BADGE_CHECK_CUTOUT}" '
+            'class="ColorScheme-PositiveText success" fill="#16A34A" fill-rule="evenodd"/>'
         )
     elif icon_key == "red":
         badge = (
-            '<circle cx="11.8" cy="11.8" r="3.8" class="ColorScheme-NegativeText error" fill="#DC2626"/>\n'
-            '  <path d="M10.3 10.3 L13.3 13.3 M13.3 10.3 L10.3 13.3" stroke="#FFFFFF" stroke-width="1.6" '
-            'stroke-linecap="round" fill="none"/>'
+            f'<path d="{_BADGE_CIRCLE_PATH} {_BADGE_X_CUTOUT}" '
+            'class="ColorScheme-NegativeText error" fill="#DC2626" fill-rule="evenodd"/>'
         )
     else:
         badge = (
-            '<circle cx="11.8" cy="11.8" r="3.8" class="ColorScheme-NeutralText warning" fill="#F59E0B"/>\n'
-            '  <path d="M11.8 9.6 L11.8 12.1" stroke="#18181B" stroke-width="1.7" stroke-linecap="round"/>\n'
-            '  <circle cx="11.8" cy="13.7" r="0.95" fill="#18181B"/>'
+            f'<path d="{_BADGE_CIRCLE_PATH} {_BADGE_EXCL_CUTOUT}" '
+            'class="ColorScheme-NeutralText warning" fill="#F59E0B" fill-rule="evenodd"/>'
         )
 
     return (
@@ -106,13 +131,8 @@ def render_tray_symbolic_svg(icon_key: str) -> str:
         '      .ColorScheme-NeutralText { color: #f59e0b; }\n'
         '      .ColorScheme-NegativeText { color: #dc2626; }\n'
         '    </style>\n'
-        '    <mask id="badge-cutout">\n'
-        '      <rect width="16" height="16" fill="#FFFFFF"/>\n'
-        '      <circle cx="11.8" cy="11.8" r="4.7" fill="#000000"/>\n'
-        '    </mask>\n'
         '  </defs>\n'
-        f'  <path d="{_OBIT_O_PATH}" class="ColorScheme-Text" fill="currentColor" fill-rule="evenodd" '
-        f'mask="url(#badge-cutout)"{mark_opacity}/>\n'
+        f'  <path d="{_OBIT_O_PATH}" class="ColorScheme-Text" fill="currentColor" fill-rule="evenodd"{mark_opacity}/>\n'
         f'  {badge}\n'
         '</svg>\n'
     )

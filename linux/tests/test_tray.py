@@ -147,6 +147,8 @@ class TrayHelpersTests(unittest.TestCase):
                 self.assertIn("<svg", svg)
                 self.assertIn('viewBox="0 0 16 16"', svg)
                 self.assertIn("ColorScheme-Text", svg)
+                self.assertIn('fill-rule="evenodd"', svg)
+                self.assertNotIn("<mask", svg)
 
     def test_autostart_toggle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
