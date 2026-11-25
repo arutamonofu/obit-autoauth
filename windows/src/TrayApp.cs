@@ -264,7 +264,7 @@ namespace ObitAutoAuth
             float s = size / 16f;
             bool lightTaskbar = IsLightTaskbar();
             bool isInactive = dotColor == Color.Gray;
-            int alpha = isInactive ? 140 : 255;
+            int alpha = isInactive ? 115 : 255;
             Color fgColor = lightTaskbar
                 ? Color.FromArgb(alpha, 27, 27, 27)
                 : Color.FromArgb(alpha, 255, 255, 255);
@@ -294,7 +294,7 @@ namespace ObitAutoAuth
                 if (isInactive)
                 {
                     float r = 3.1f * s;
-                    using (SolidBrush b = new SolidBrush(Color.FromArgb(138, 138, 138)))
+                    using (SolidBrush b = new SolidBrush(fgColor))
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
                     }
@@ -303,9 +303,12 @@ namespace ObitAutoAuth
                 {
                     float r = 3.8f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(22, 163, 74)))
-                    using (Pen p = new Pen(Color.White, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
+                    }
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    using (Pen p = new Pen(Color.Transparent, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                    {
                         g.DrawLines(p, new PointF[]
                         {
                             new PointF(9.9f * s, 11.8f * s),
@@ -313,30 +316,39 @@ namespace ObitAutoAuth
                             new PointF(13.8f * s, 10.4f * s),
                         });
                     }
+                    g.CompositingMode = CompositingMode.SourceOver;
                 }
                 else if (dotColor == Color.Crimson)
                 {
                     float r = 3.8f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(220, 38, 38)))
-                    using (Pen p = new Pen(Color.White, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
+                    }
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    using (Pen p = new Pen(Color.Transparent, 1.6f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    {
                         g.DrawLine(p, 10.3f * s, 10.3f * s, 13.3f * s, 13.3f * s);
                         g.DrawLine(p, 13.3f * s, 10.3f * s, 10.3f * s, 13.3f * s);
                     }
+                    g.CompositingMode = CompositingMode.SourceOver;
                 }
                 else
                 {
                     float r = 3.8f * s;
                     using (SolidBrush b = new SolidBrush(Color.FromArgb(245, 158, 11)))
-                    using (Pen p = new Pen(Color.FromArgb(24, 24, 27), 1.7f * s) { StartCap = LineCap.Round })
-                    using (SolidBrush dot = new SolidBrush(Color.FromArgb(24, 24, 27)))
                     {
                         g.FillEllipse(b, cx - r, cy - r, r * 2f, r * 2f);
-                        g.DrawLine(p, cx, 9.6f * s, cx, 12.1f * s);
-                        float dr = 0.95f * s;
-                        g.FillEllipse(dot, cx - dr, 13.7f * s - dr, dr * 2f, dr * 2f);
                     }
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    using (Pen p = new Pen(Color.Transparent, 1.6f * s) { StartCap = LineCap.Round })
+                    using (SolidBrush dot = new SolidBrush(Color.Transparent))
+                    {
+                        g.DrawLine(p, cx, 9.65f * s, cx, 11.55f * s);
+                        float dr = 0.88f * s;
+                        g.FillEllipse(dot, cx - dr, 13.65f * s - dr, dr * 2f, dr * 2f);
+                    }
+                    g.CompositingMode = CompositingMode.SourceOver;
                 }
 
                 IntPtr hIcon = bmp.GetHicon();
